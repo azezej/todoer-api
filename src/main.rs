@@ -1,14 +1,19 @@
 use actix_web::{web, App, HttpServer};
 
-mod config;
+mod models {}
 mod routes {
-    pub(crate) mod echo;
-    pub(crate) mod hello;
+    pub mod echo;
+    pub mod hello;
+}
+mod utils {
+    pub mod database {
+        pub mod connection;
+    }
+    pub mod config;
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    config::print_config();
     HttpServer::new(|| {
         App::new()
             .service(routes::hello::hello)
