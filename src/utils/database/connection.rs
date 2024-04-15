@@ -1,7 +1,7 @@
 use crate::utils::config;
-use postgres::{Client, Error, NoTls};
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
 
-pub(crate) fn connect() -> Result<(), Error> {
-    let client = Client::connect(&config::get_connection_string(), NoTls)?;
-    Ok(())
+pub(crate) fn connect() -> ConnectionResult<PgConnection> {
+    return PgConnection::establish(&config::get_connection_string());
 }

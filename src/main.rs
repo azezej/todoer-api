@@ -14,6 +14,10 @@ mod utils {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    if utils::database::connection::connect().is_ok() == true {
+        println!("Connection to database successful!");
+    }
+
     HttpServer::new(|| {
         App::new()
             .service(routes::hello::hello)
