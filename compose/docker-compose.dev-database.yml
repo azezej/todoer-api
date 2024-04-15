@@ -1,0 +1,21 @@
+networks:
+  postgres:
+    name: postgresql
+
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    container_name: gettoit-postgres-dev
+    labels:
+      - pgbackup.enable=false
+    environment:
+      - POSTGRES_DB=gettoitdev
+      - POSTGRES_USER=gettoitdev
+      - POSTGRES_PASSWORD=gettoitdevVCXKZUQ
+    ports:
+      - 5432:5432
+    networks:
+      - postgres
+    env_file:
+      - ../.env
