@@ -1,15 +1,14 @@
 use dotenv;
 
-pub fn get_connection_string() -> String {
+pub fn init() {
     let _ = dotenv::from_path("../.env");
     dotenv::dotenv().ok();
+    if dotenv::var("RELEASE").unwrap() == "false" {
+        std::env::set_var("RUST_LOG", "debug");
+        env_logger::init();
+    }
+}
 
-    return format!(
-        "postgresql://{}:{}@{}:{}/{}",
-        dotenv::var("POSTGRES_USER").unwrap(),
-        dotenv::var("POSTGRES_PASSWORD").unwrap(),
-        "localhost",
-        dotenv::var("POSTGRES_PORT").unwrap(),
-        dotenv::var("POSTGRES_DATABASE").unwrap()
-    );
+pub fn get_connection_string() -> String {
+    return dotenv::var("DATABASE_URL").unwrap();
 }
