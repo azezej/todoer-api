@@ -10,6 +10,7 @@ pub struct User {
     pub last_name: String,
     pub email: String,
     pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Insertable, Debug)]
@@ -19,10 +20,19 @@ pub struct NewUser<'a> {
     pub last_name: &'a str,
     pub email: &'a str,
     pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputUser {
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateUser {
+    pub id: i32,
     pub first_name: String,
     pub last_name: String,
     pub email: String,

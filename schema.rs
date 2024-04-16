@@ -7,5 +7,6 @@ diesel::table! {
         last_name -> Text,
         email -> Text,
         created_at -> Timestamp,
+        modified_at -> Nullable<Timestamp>,
     }
 }
