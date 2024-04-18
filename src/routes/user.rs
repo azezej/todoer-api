@@ -1,13 +1,19 @@
 use crate::{
     diesel::{QueryDsl, RunQueryDsl},
-    models::user::{InputUser, NewUser, UpdateUser, User},
+    models::user::{
+        InputUser, NewUser, UpdateUserEmail, UpdateUserFirstName, UpdateUserLastName, User,
+    },
     schema::users::dsl::*,
     utils::database::connection::Pool,
 };
-use actix_web::{delete, get, patch, post, web, Error, HttpResponse, Responder};
+use actix_web::{
+    delete, get, patch, post,
+    web::{self},
+    Error, HttpResponse, Responder,
+};
 use diesel::{
-    dsl::{delete, insert_into, Update},
-    update, ExpressionMethods,
+    dsl::{delete, insert_into},
+    ExpressionMethods,
 };
 use std::vec::Vec;
 
@@ -38,40 +44,100 @@ fn add_single_user(
     Ok(res)
 }
 
-fn change_user_email(
+fn update_user_email(
     pool: web::Data<Pool>,
-    item: web::Json<UpdateUser>,
-) -> Result<UpdateUser, diesel::result::Error> {
+    item: web::Json<UpdateUserEmail>,
+) -> Result<User, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
     let res_email = diesel::update(users)
         .set(email.eq(&item.email))
         .filter(id.eq(&item.id))
-        .get_result::<UpdateUser>(&mut conn)?;
+        .get_result(&mut conn)?;
+    let _ = diesel::update(users)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.id));
     Ok(res_email)
 }
 
-fn change_user_first_name(
+fn update_user_first_name(
     pool: web::Data<Pool>,
-    item: web::Json<UpdateUser>,
+    item: web::Json<UpdateUserFirstName>,
 ) -> Result<User, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
     let res_first_name = diesel::update(users)
         .set(first_name.eq(&item.first_name))
         .filter(id.eq(&item.id))
         .get_result(&mut conn)?;
+    let _ = diesel::update(users)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.id));
     Ok(res_first_name)
 }
 
-fn change_user_last_name(
+fn update_user_last_name(
     pool: web::Data<Pool>,
-    item: web::Json<UpdateUser>,
+    item: web::Json<UpdateUserLastName>,
 ) -> Result<User, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
     let res_email = diesel::update(users)
-        .set(email.eq(&item.email))
+        .set(last_name.eq(&item.last_name))
         .filter(id.eq(&item.id))
         .get_result(&mut conn)?;
+    let _ = diesel::update(users)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.id));
     Ok(res_email)
+}
+
+#[patch("/users/update/firstname/{id}")]
+pub async fn patch_user_first_name(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateUserFirstName>,
+) -> impl Responder {
+    match web::block(move || update_user_first_name(db, item)).await {
+        Ok(user) => match serde_json::to_value(user.unwrap()) {
+            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch user's first name: {}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        },
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+#[patch("/users/update/lastname/{id}")]
+pub async fn patch_user_last_name(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateUserLastName>,
+) -> impl Responder {
+    match web::block(move || update_user_last_name(db, item)).await {
+        Ok(user) => match serde_json::to_value(user.unwrap()) {
+            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch user's first name: {}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        },
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+#[patch("/users/update/email/{id}")]
+pub async fn patch_user_email(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateUserEmail>,
+) -> impl Responder {
+    match web::block(move || update_user_email(db, item)).await {
+        Ok(user) => match serde_json::to_value(user.unwrap()) {
+            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch user's first name: {}", e);
+                HttpResponse::InternalServerError().finish()
+            }
+        },
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
 
 fn delete_single_user(db: web::Data<Pool>, user_id: i32) -> Result<usize, diesel::result::Error> {

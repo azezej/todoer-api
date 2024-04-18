@@ -1,15 +1,14 @@
 extern crate diesel;
 
-use actix_web::{
-    web::{self, Data},
-    App, HttpServer,
-};
+use actix_web::{web::Data, App, HttpServer};
 
 mod models {
-    pub mod error;
+    pub mod todo_list;
+    pub mod todo_task;
     pub mod user;
 }
 mod routes {
+    pub mod todo_task;
     pub mod user;
 }
 mod utils {
@@ -33,6 +32,10 @@ async fn main() -> std::io::Result<()> {
             .service(routes::user::get_user_by_id)
             .service(routes::user::add_user)
             .service(routes::user::delete_user)
+            .service(routes::user::patch_user_email)
+            .service(routes::user::patch_user_first_name)
+            .service(routes::user::patch_user_last_name)
+            .service(routes::todo_task::add_task)
     })
     .bind("127.0.0.1:8080")?
     .run()
