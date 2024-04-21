@@ -3,9 +3,9 @@ extern crate diesel;
 use actix_web::{web::Data, App, HttpServer};
 
 mod models {
+    pub mod tailored_response;
     pub mod todo_list;
     pub mod todo_task;
-    pub mod tailored_response;
     pub mod user;
 }
 mod routes {
@@ -36,9 +36,15 @@ async fn main() -> std::io::Result<()> {
             .service(routes::user::patch_user_email)
             .service(routes::user::patch_user_first_name)
             .service(routes::user::patch_user_last_name)
-            .service(routes::todo_task::add_task)
             .service(routes::todo_task::get_tasks)
             .service(routes::todo_task::get_task_by_id)
+            .service(routes::todo_task::add_task)
+            .service(routes::todo_task::delete_task)
+            .service(routes::todo_task::patch_task_name)
+            .service(routes::todo_task::patch_task_description)
+            .service(routes::todo_task::patch_task_due_date)
+            .service(routes::todo_task::patch_task_todolist_id)
+            .service(routes::todo_task::patch_task_parent_task_id)
     })
     .bind("127.0.0.1:8080")?
     .run()
