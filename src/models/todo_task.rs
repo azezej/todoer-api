@@ -60,7 +60,6 @@ pub struct UpdateTodoTaskParentTaskID {
     pub modified_at: NaiveDateTime,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateTodoTaskDueDate {
     pub task_id: i32,
@@ -79,3 +78,4 @@ pub struct UpdateTodoTaskTodoListId {
     pub todolist_id: i32,
     pub modified_at: NaiveDateTime,
 }
+

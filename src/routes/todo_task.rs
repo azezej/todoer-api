@@ -1,12 +1,9 @@
 use crate::models::tailored_response::*;
 use crate::schema::todotasks::dsl::*;
-use crate::{
-    models::todo_task::{InputTodoTask, NewTodoTask, TodoTask},
-    utils::database::connection::Pool,
-};
+use crate::{models::todo_task::*, utils::database::connection::Pool};
 use actix_web::web::{self};
 use actix_web::{delete, get, patch, post, Error, HttpResponse};
-use diesel::{delete, insert_into, QueryDsl, RunQueryDsl};
+use diesel::{delete, insert_into, update, QueryDsl, RunQueryDsl};
 
 fn get_all_tasks(pool: web::Data<Pool>) -> Result<Vec<TodoTask>, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
@@ -50,9 +47,19 @@ fn delete_single_task(db: web::Data<Pool>, task_id: i32) -> Result<usize, diesel
     Ok(deletion)
 }
 
-fn update_single_task_name(db: web::Data<Pool>, task_id: i32) -> Result<usize, diesel::result::Error> {
+fn update_single_task_name(
+    db: web::Data<Pool>,
+    item: web::Data<UpdateTodoTaskName>,
+) -> Result<UpdateTodoTaskName, diesel::result::Error> {
     let mut conn = db.get().unwrap();
-    let 
+    let update_task_name = update(todotasks)
+        .set(name.eq(&item.name))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(task_id.eq(&item.task_id));
+    Ok(update_task_name)
 }
 
 #[post("/tasks/new")]
