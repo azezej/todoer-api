@@ -3,9 +3,9 @@ extern crate diesel;
 use actix_web::{web::Data, App, HttpServer};
 
 mod models {
-    pub mod tailored_response;
     pub mod todo_list;
     pub mod todo_task;
+    pub mod tailored_response
     pub mod user;
 }
 mod routes {
