@@ -2,7 +2,8 @@ use crate::models::tailored_response::*;
 use crate::schema::todotasks::dsl::*;
 use crate::{models::todo_task::*, utils::database::connection::Pool};
 use actix_web::web::{self};
-use actix_web::{delete, get, patch, post, Error, HttpResponse};
+use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};
+use diesel::prelude::*;
 use diesel::{delete, insert_into, update, QueryDsl, RunQueryDsl};
 
 fn get_all_tasks(pool: web::Data<Pool>) -> Result<Vec<TodoTask>, diesel::result::Error> {
@@ -49,17 +50,82 @@ fn delete_single_task(db: web::Data<Pool>, task_id: i32) -> Result<usize, diesel
 
 fn update_single_task_name(
     db: web::Data<Pool>,
-    item: web::Data<UpdateTodoTaskName>,
-) -> Result<UpdateTodoTaskName, diesel::result::Error> {
+    item: web::Json<UpdateTodoTaskName>,
+) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
-    let update_task_name = update(todotasks)
+    let task = diesel::update(todotasks)
         .set(name.eq(&item.name))
         .filter(id.eq(&item.task_id))
         .get_result(&mut conn)?;
     let _ = update(todotasks)
         .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(task_id.eq(&item.task_id));
-    Ok(update_task_name)
+        .filter(id.eq(&item.task_id));
+    Ok(task)
+}
+
+fn update_single_task_description(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateTodoTaskDescription>,
+) -> Result<TodoTask, diesel::result::Error> {
+    let mut conn = db.get().unwrap();
+    let task = diesel::update(todotasks)
+        .set(description.eq(&item.description))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.task_id));
+    Ok(task)
+}
+
+fn update_single_task_parent_task_id(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateTodoTaskParentTaskID>,
+) -> Result<TodoTask, diesel::result::Error> {
+    let mut conn = db.get().unwrap();
+    let task = diesel::update(todotasks)
+        .set(parent_task_id.eq(&item.parent_task_id))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.task_id));
+    Ok(task)
+}
+
+fn update_single_task_due_date(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateTodoTaskDueDate>,
+) -> Result<TodoTask, diesel::result::Error> {
+    let mut conn = db.get().unwrap();
+    let task = diesel::update(todotasks)
+        .set(due_date.eq(&item.due_date))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.task_id));
+    Ok(task)
+}
+
+/*
+this below is maybe implementable if we plan to create a feature
+to move tasks between workspaces or between users
+*/
+
+fn update_single_task_todolist_id(
+    db: web::Data<Pool>,
+    item: web::Json<UpdateTodoTaskTodoListID>,
+) -> Result<TodoTask, diesel::result::Error> {
+    let mut conn = db.get().unwrap();
+    let task = diesel::update(todotasks)
+        .set(todolist_id.eq(&item.todolist_id))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.task_id));
+    Ok(task)
 }
 
 #[post("/tasks/new")]
@@ -127,9 +193,81 @@ pub async fn delete_task(
 #[patch("/tasks/update/name/{id}")]
 pub async fn update_task_name(
     db: web::Data<Pool>,
-    task_id: web::Path<i32>,
-) -> Result<HttpResponse, Error> {
-    match web::block(move || update_single_task_name(db, task_id.into_inner())).await {
-        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {},
+    task_id: web::Json<UpdateTodoTaskName>,
+) -> impl Responder {
+    match web::block(move || update_single_task_name(db, task_id)).await {
+        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {
+            Ok(response_body) => throw_response_ok(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch task name: {}", e);
+                throw_response_error()
+            }
+        },
+        Err(_) => throw_response_error(),
+    }
+}
+
+#[patch("/tasks/update/description/{id}")]
+pub async fn update_task_description(
+    db: web::Data<Pool>,
+    task_id: web::Json<UpdateTodoTaskDescription>,
+) -> impl Responder {
+    match web::block(move || update_single_task_description(db, task_id)).await {
+        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {
+            Ok(response_body) => throw_response_ok(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch task description: {}", e);
+                throw_response_error()
+            }
+        },
+        Err(_) => throw_response_error(),
+    }
+}
+#[patch("/tasks/update/todolistid/{id}")]
+pub async fn update_task_todolist_id(
+    db: web::Data<Pool>,
+    task_id: web::Json<UpdateTodoTaskTodoListID>,
+) -> impl Responder {
+    match web::block(move || update_single_task_todolist_id(db, task_id)).await {
+        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {
+            Ok(response_body) => throw_response_ok(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch task todolist id: {}", e);
+                throw_response_error()
+            }
+        },
+        Err(_) => throw_response_error(),
+    }
+}
+#[patch("/tasks/update/duedate/{id}")]
+pub async fn update_task_due_date(
+    db: web::Data<Pool>,
+    task_id: web::Json<UpdateTodoTaskDueDate>,
+) -> impl Responder {
+    match web::block(move || update_single_task_due_date(db, task_id)).await {
+        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {
+            Ok(response_body) => throw_response_ok(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch task name: {}", e);
+                throw_response_error()
+            }
+        },
+        Err(_) => throw_response_error(),
+    }
+}
+#[patch("/tasks/update/parenttaskid/{id}")]
+pub async fn update_task_parent_task_id(
+    db: web::Data<Pool>,
+    task_id: web::Json<UpdateTodoTaskParentTaskID>,
+) -> impl Responder {
+    match web::block(move || update_single_task_parent_task_id(db, task_id)).await {
+        Ok(updated_task) => match serde_json::to_value(updated_task.unwrap()) {
+            Ok(response_body) => throw_response_ok(response_body),
+            Err(e) => {
+                eprintln!("Failed to patch task name: {}", e);
+                throw_response_error()
+            }
+        },
+        Err(_) => throw_response_error(),
     }
 }
