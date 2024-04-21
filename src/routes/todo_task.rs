@@ -191,7 +191,7 @@ pub async fn delete_task(
 }
 
 #[patch("/tasks/update/name/{id}")]
-pub async fn update_task_name(
+pub async fn patch_task_name(
     db: web::Data<Pool>,
     task_id: web::Json<UpdateTodoTaskName>,
 ) -> impl Responder {
@@ -208,7 +208,7 @@ pub async fn update_task_name(
 }
 
 #[patch("/tasks/update/description/{id}")]
-pub async fn update_task_description(
+pub async fn patch_task_description(
     db: web::Data<Pool>,
     task_id: web::Json<UpdateTodoTaskDescription>,
 ) -> impl Responder {
@@ -224,7 +224,7 @@ pub async fn update_task_description(
     }
 }
 #[patch("/tasks/update/todolistid/{id}")]
-pub async fn update_task_todolist_id(
+pub async fn patch_task_todolist_id(
     db: web::Data<Pool>,
     task_id: web::Json<UpdateTodoTaskTodoListID>,
 ) -> impl Responder {
@@ -240,7 +240,7 @@ pub async fn update_task_todolist_id(
     }
 }
 #[patch("/tasks/update/duedate/{id}")]
-pub async fn update_task_due_date(
+pub async fn patch_task_due_date(
     db: web::Data<Pool>,
     task_id: web::Json<UpdateTodoTaskDueDate>,
 ) -> impl Responder {
@@ -256,7 +256,7 @@ pub async fn update_task_due_date(
     }
 }
 #[patch("/tasks/update/parenttaskid/{id}")]
-pub async fn update_task_parent_task_id(
+pub async fn patch_task_parent_task_id(
     db: web::Data<Pool>,
     task_id: web::Json<UpdateTodoTaskParentTaskID>,
 ) -> impl Responder {
