@@ -5,6 +5,7 @@ use crate::{
     },
     schema::users::dsl::*,
     utils::database::connection::Pool,
+    models::tailored_response::*
 };
 use actix_web::{
     delete, get, patch, post,
@@ -96,13 +97,13 @@ pub async fn patch_user_first_name(
 ) -> impl Responder {
     match web::block(move || update_user_first_name(db, item)).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Ok(response_body) => throw_response_ok(response_body),
             Err(e) => {
                 eprintln!("Failed to patch user's first name: {}", e);
-                HttpResponse::InternalServerError().finish()
+                throw_response_error()
             }
         },
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(_) => throw_response_error(),
     }
 }
 
@@ -113,13 +114,13 @@ pub async fn patch_user_last_name(
 ) -> impl Responder {
     match web::block(move || update_user_last_name(db, item)).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Ok(response_body) => throw_response_ok(response_body),
             Err(e) => {
                 eprintln!("Failed to patch user's first name: {}", e);
-                HttpResponse::InternalServerError().finish()
+                throw_response_error()
             }
         },
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(_) => throw_response_error(),
     }
 }
 
@@ -130,13 +131,13 @@ pub async fn patch_user_email(
 ) -> impl Responder {
     match web::block(move || update_user_email(db, item)).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Ok(response_body) => throw_response_ok(response_body),
             Err(e) => {
                 eprintln!("Failed to patch user's first name: {}", e);
-                HttpResponse::InternalServerError().finish()
+                throw_response_error()
             }
         },
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(_) => throw_response_error(),
     }
 }
 
@@ -150,13 +151,13 @@ fn delete_single_user(db: web::Data<Pool>, user_id: i32) -> Result<usize, diesel
 pub async fn get_users(db: web::Data<Pool>) -> impl Responder {
     match web::block(move || get_all_users(db)).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => HttpResponse::Ok().json(response_body),
+            Ok(response_body) => throw_response_ok(response_body),
             Err(e) => {
                 eprintln!("Failed to serialize user: {}", e);
-                HttpResponse::InternalServerError().finish()
+                throw_response_error()
             }
         },
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(_) => throw_response_error(),
     }
 }
 
@@ -167,15 +168,15 @@ pub async fn get_user_by_id(
 ) -> Result<HttpResponse, Error> {
     match web::block(move || db_get_user_by_id(db, user_id.into_inner())).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => Ok(HttpResponse::Ok().json(response_body)),
+            Ok(response_body) => Ok(throw_response_ok(response_body)),
             Err(e) => {
                 eprintln!("Failed to serialize user: {}", e);
-                Ok(HttpResponse::InternalServerError().finish())
+                Ok(throw_response_error())
             }
         },
         Err(e) => {
             eprintln!("Failed to retrieve user: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
+            Ok(throw_response_error())
         }
     }
 }
@@ -187,13 +188,13 @@ pub async fn add_user(
 ) -> Result<HttpResponse, Error> {
     match web::block(move || add_single_user(db, item)).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => Ok(HttpResponse::Created().json(response_body)),
+            Ok(response_body) => Ok(throw_response_created(response_body)),
             Err(e) => {
                 eprintln!("Failed to create user: {}", e);
-                Ok(HttpResponse::InternalServerError().finish())
+                Ok(throw_response_error())
             }
         },
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+        Err(_) => Ok(throw_response_error()),
     }
 }
 
@@ -204,12 +205,12 @@ pub async fn delete_user(
 ) -> Result<HttpResponse, Error> {
     match web::block(move || delete_single_user(db, user_id.into_inner())).await {
         Ok(user) => match serde_json::to_value(user.unwrap()) {
-            Ok(response_body) => Ok(HttpResponse::Ok().json(response_body)),
+            Ok(response_body) => Ok(throw_response_ok(response_body)),
             Err(e) => {
-                eprintln!("Failed to create user: {}", e);
-                Ok(HttpResponse::InternalServerError().finish())
+                eprintln!("Failed to delete user: {}", e);
+                Ok(throw_response_error())
             }
         },
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+        Err(_) => Ok(throw_response_error()),
     }
 }

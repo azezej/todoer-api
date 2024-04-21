@@ -16,11 +16,11 @@ pub struct TodoList {
 
 #[derive(Serialize, Deserialize, Insertable, Debug)]
 #[diesel(table_name = todolists)]
-pub struct NewTodoList<'a> {
+pub struct NewTodoList {
     pub user_id: i32,
-    pub shared_with: Option<&'a str>,
-    pub name: &'a str,
-    pub description: Option<&'a str>,
+    pub shared_with: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
