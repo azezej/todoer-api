@@ -23,6 +23,7 @@ diesel::table! {
         description -> Nullable<Text>,
         parent_task_id -> Nullable<Int4>,
         due_date -> Nullable<Date>,
+        done -> Bool,
         created_at -> Timestamp,
         modified_at -> Timestamp,
     }
