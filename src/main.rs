@@ -1,7 +1,10 @@
 extern crate diesel;
 
 use actix_web::{web::Data, App, HttpServer};
+use scopes::{swagger, todo_list_scope, todo_task_scope, user_scope};
 
+pub mod constants;
+pub mod scopes;
 mod models {
     pub mod dto {
         pub mod todo_list;
@@ -11,11 +14,15 @@ mod models {
     pub mod utils {
         pub mod tailored_response;
     }
+    pub mod login_history;
+    pub mod response;
     pub mod todo_list;
     pub mod todo_task;
     pub mod user;
+    pub mod user_token;
 }
 mod routes {
+    pub mod todo_list;
     pub mod todo_task;
     pub mod user;
 }
@@ -26,7 +33,7 @@ mod utils {
     pub mod config;
 }
 mod service {
-    mod todo_list {
+    pub mod todo_list {
         pub mod todo_list_service;
     }
     pub mod todo_task {
@@ -47,22 +54,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))
-            .service(routes::user::get_users)
-            .service(routes::user::get_user_by_id)
-            .service(routes::user::add_user)
-            .service(routes::user::delete_user)
-            .service(routes::user::patch_user_email)
-            .service(routes::user::patch_user_first_name)
-            .service(routes::user::patch_user_last_name)
-            .service(routes::todo_task::get_tasks)
-            .service(routes::todo_task::get_task_by_id)
-            .service(routes::todo_task::add_task)
-            .service(routes::todo_task::delete_task)
-            .service(routes::todo_task::patch_task_name)
-            .service(routes::todo_task::patch_task_description)
-            .service(routes::todo_task::patch_task_due_date)
-            .service(routes::todo_task::patch_task_todolist_id)
-            .service(routes::todo_task::patch_task_parent_task_id)
+            .service(user_scope())
+            .service(todo_task_scope())
+            .service(todo_list_scope())
+            .service(swagger())
     })
     .bind("127.0.0.1:8080")?
     .run()

@@ -1,20 +1,23 @@
 use crate::{
     diesel::{QueryDsl, RunQueryDsl},
-    models::dto::user::*,
-    models::user::{InputUser, NewUser, User},
+    models::{dto::user::*, user::User, user::UserDTO, utils::tailored_response},
     schema::users::dsl::*,
     utils::database::connection::Pool,
 };
-use actix_web::web::{self};
-use diesel::{
-    dsl::{delete, insert_into},
-    ExpressionMethods,
-};
+use actix_web::{web, HttpResponse};
+use diesel::{dsl::delete, ExpressionMethods};
 
 pub fn get_all_users(pool: web::Data<Pool>) -> Result<Vec<User>, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
     let items = users.load::<User>(&mut conn)?;
     Ok(items)
+}
+
+pub fn signup(user: UserDTO, pool: web::Data<Pool>) -> Result<String, HttpResponse> {
+    match User::signup(user, pool) {
+        Ok(message) => Ok(String::new()),
+        Err(message) => Err(tailored_response::throw_response_error()),
+    }
 }
 
 pub fn db_get_user_by_id(
@@ -23,22 +26,6 @@ pub fn db_get_user_by_id(
 ) -> Result<User, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
     users.find(user_id).get_result::<User>(&mut conn)
-}
-
-pub fn add_single_user(
-    pool: web::Data<Pool>,
-    item: web::Json<InputUser>,
-) -> Result<User, diesel::result::Error> {
-    let mut conn = pool.get().unwrap();
-    let new_user = NewUser {
-        first_name: item.first_name.clone(),
-        last_name: item.last_name.clone(),
-        email: item.email.clone(),
-        created_at: chrono::Local::now().naive_local(),
-        modified_at: chrono::Local::now().naive_local(),
-    };
-    let res = insert_into(users).values(&new_user).get_result(&mut conn)?;
-    Ok(res)
 }
 
 pub fn update_user_email(

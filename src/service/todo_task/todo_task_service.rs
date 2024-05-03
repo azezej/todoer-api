@@ -129,3 +129,18 @@ pub fn update_single_task_todolist_id(
         .filter(id.eq(&item.task_id));
     Ok(task)
 }
+
+pub fn update_todo_task_done(
+    db: web::Data<Pool>,
+    item: web::Json<todo_task::UpdateTodoTaskDone>,
+) -> Result<TodoTask, diesel::result::Error> {
+    let mut conn = db.get().unwrap();
+    let task = diesel::update(todotasks)
+        .set(done.eq(&item.done))
+        .filter(id.eq(&item.task_id))
+        .get_result(&mut conn)?;
+    let _ = update(todotasks)
+        .set(modified_at.eq(chrono::Local::now().naive_local()))
+        .filter(id.eq(&item.task_id));
+    Ok(task)
+}
