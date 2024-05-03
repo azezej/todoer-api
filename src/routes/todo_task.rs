@@ -1,7 +1,7 @@
 use crate::models::utils::tailored_response::*;
 use crate::{
-    models::dto::todo_task, models::todo_task::*, service::todo_task::todo_task_service::*,
-    utils::database::connection::Pool,
+    models::dto::todo_task, models::todo_task::*, service::todo_task_service::*,
+    utils::database_connection::Pool,
 };
 use actix_web::web::{self};
 use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};

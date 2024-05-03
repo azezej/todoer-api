@@ -4,7 +4,7 @@ use crate::models::{
     todo_list::{InputTodoList, NewTodoList},
 };
 use crate::{
-    models::todo_list::TodoList, schema::todolists::dsl::*, utils::database::connection::Pool,
+    models::todo_list::TodoList, schema::todolists::dsl::*, utils::database_connection::Pool,
 };
 use actix_web::web::{self};
 use diesel::prelude::*;

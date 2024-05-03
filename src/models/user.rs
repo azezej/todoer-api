@@ -1,9 +1,9 @@
 use crate::{
+    models::dto::user::*,
     models::login_history::*,
     models::user_token::*,
-    routes::user::*,
     schema::users::{self, dsl::*},
-    utils::database::connection::Pool,
+    utils::database_connection::Pool,
 };
 use actix_jwt_auth_middleware::FromRequest;
 use actix_web::{web, HttpResponse};
@@ -11,19 +11,8 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, Identifiable};
 use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, OpenApi, ToSchema};
+use utoipa::IntoParams;
 use uuid::Uuid;
-
-#[derive(OpenApi)]
-#[openapi(paths(
-    get_user_by_id,
-    add_user,
-    delete_user,
-    patch_user_first_name,
-    patch_user_last_name,
-    patch_user_email
-))]
-pub struct UserApiDoc;
 
 #[derive(Debug, Serialize, Deserialize, Identifiable, Queryable, IntoParams)]
 pub struct User {
@@ -35,47 +24,6 @@ pub struct User {
     pub password: String,
     pub created_at: NaiveDateTime,
     pub modified_at: NaiveDateTime,
-    pub login_session: String,
-}
-
-#[derive(Serialize, Deserialize, Insertable, Debug, IntoParams, ToSchema)]
-#[diesel(table_name = users)]
-pub struct NewUser {
-    pub username: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub password: String,
-    pub created_at: NaiveDateTime,
-    pub modified_at: NaiveDateTime,
-}
-
-#[derive(Debug, Serialize, Deserialize, IntoParams, ToSchema)]
-#[schema(example = json!({"first_name": "firstNameExample", "last_name": "lastNameExample", "email": "email@example.com"}))]
-pub struct InputUser {
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-}
-
-#[derive(Insertable, Serialize, Deserialize)]
-#[diesel(table_name = users)]
-pub struct UserDTO {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct LoginDTO {
-    pub username_or_email: String,
-    pub password: String,
-}
-
-#[derive(Insertable, Serialize, Deserialize)]
-#[diesel(table_name = users)]
-pub struct LoginInfoDTO {
-    pub username: String,
     pub login_session: String,
 }
 

@@ -5,7 +5,7 @@ use jsonwebtoken::{EncodingKey, Header};
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::models::user::LoginInfoDTO;
+use crate::models::dto::user::LoginInfoDTO;
 
 pub static KEY: [u8; 16] = *include_bytes!("../secret.key");
 static ONE_WEEK: i64 = 60 * 60 * 24 * 7; // in seconds

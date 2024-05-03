@@ -1,9 +1,33 @@
+use crate::schema::users;
 use chrono::NaiveDateTime;
+use diesel::Insertable;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
+#[derive(Insertable, Serialize, Deserialize)]
+#[diesel(table_name = users)]
+pub struct UserDTO {
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LoginDTO {
+    pub username_or_email: String,
+    pub password: String,
+}
+
+#[derive(Insertable, Serialize, Deserialize)]
+#[diesel(table_name = users)]
+pub struct LoginInfoDTO {
+    pub username: String,
+    pub login_session: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, IntoParams, ToSchema)]
-#[schema(example = json!({"id": 1, "first_name": "exampleName", "modified_at": ""}))]
 pub struct UpdateUserFirstName {
     pub id: i32,
     pub first_name: String,
@@ -25,7 +49,6 @@ pub struct UpdateUserEmail {
 }
 
 #[derive(Serialize, Deserialize, IntoParams, ToSchema)]
-#[schema(example = json!({"id": 1, "first_name": "exampleName", "modified_at": ""}))]
 pub struct UpdateUserPassword {
     pub id: i32,
     pub password: String,

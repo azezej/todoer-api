@@ -5,7 +5,7 @@ use diesel::{prelude::*, Associations, Identifiable, Insertable, Queryable};
 use crate::{
     models::user::User,
     schema::login_history::{self, dsl::*},
-    utils::database::connection::Pool,
+    utils::database_connection::Pool,
 };
 
 #[derive(Identifiable, Associations, Queryable)]

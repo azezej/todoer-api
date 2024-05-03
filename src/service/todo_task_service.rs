@@ -1,5 +1,5 @@
 use crate::schema::todotasks::dsl::*;
-use crate::{models::dto::todo_task, models::todo_task::*, utils::database::connection::Pool};
+use crate::{models::dto::todo_task, models::todo_task::*, utils::database_connection::Pool};
 use actix_web::web::{self};
 use diesel::prelude::*;
 use diesel::{delete, insert_into, update, QueryDsl, RunQueryDsl};

@@ -1,7 +1,6 @@
-use crate::models::utils::tailored_response::*;
 use crate::{
-    models::dto::todo_list, models::todo_list::*, service::todo_list::todo_list_service::*,
-    utils::database::connection::Pool,
+    models::dto::todo_list, models::todo_list::*, service::todo_list_service::*,
+    utils::database_connection::Pool,
 };
 use actix_web::web::{self};
 use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};
@@ -21,7 +20,7 @@ pub async fn add_list(
 ) -> Result<HttpResponse, Error> {
     match web::block(move || add_single_list(db, item)).await {
         Ok(list) => match serde_json::to_value(list.unwrap()) {
-            Ok(response_body) => Ok(throw_response_created(response_body)),
+            Ok(response_body) => Ok(response_body),
             Err(e) => {
                 eprintln!("Failed to create list: {}", e);
                 Ok(throw_response_error())
