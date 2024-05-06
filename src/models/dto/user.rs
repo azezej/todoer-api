@@ -4,7 +4,7 @@ use diesel::Insertable;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Insertable, Serialize, Deserialize)]
+#[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = users)]
 pub struct UserDTO {
     pub username: String,

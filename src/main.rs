@@ -15,8 +15,10 @@ mod utils;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     utils::config::init();
-    let pool = utils::database_connection::get_connection_pool();
 
+    std::env::set_var("RUST_LOG", "debug, actix_web=trace");
+    std::env::set_var("SERDE_DEBUG", "1");
+    let pool = utils::database_connection::get_connection_pool();
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))

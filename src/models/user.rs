@@ -13,9 +13,21 @@ use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, Identifiable, Queryable, IntoParams)]
+#[derive(Debug, Serialize, Deserialize, Insertable, Identifiable, Queryable, IntoParams)]
 pub struct User {
     pub id: i32,
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub password: String,
+    pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
+    pub login_session: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Insertable, Queryable, IntoParams)]
+pub struct NewUserDTO {
     pub username: String,
     pub first_name: String,
     pub last_name: String,
@@ -40,13 +52,25 @@ enum Role {
 
 impl User {
     pub fn signup(new_user: UserDTO, pool: web::Data<Pool>) -> Result<String, String> {
+        println!("new_user: {:?}", &new_user.username);
         let mut conn = pool.get().unwrap();
         if Self::find_user_by_username(&new_user.username, &pool).is_err() {
-            let new_user = UserDTO {
+            let login_session_str = User::generate_login_session();
+            if let Some(login_history) = LoginHistory::create(&new_user.username, &pool) {
+                User::update_login_session_to_db(&new_user.username, &login_session_str, pool);
+            }
+
+            let new_user = NewUserDTO {
+                username: new_user.username,
+                first_name: new_user.first_name,
+                last_name: new_user.last_name,
+                email: new_user.email,
                 password: hash(&new_user.password, DEFAULT_COST).unwrap(),
-                ..new_user
+                created_at: chrono::Local::now().naive_local(),
+                modified_at: chrono::Local::now().naive_local(),
+                login_session: login_session_str,
             };
-            diesel::insert_into(users)
+            let _ = diesel::insert_into(users)
                 .values(new_user)
                 .execute(&mut conn);
             Ok(constants::MESSAGE_SIGNUP_SUCCESS.to_string())
