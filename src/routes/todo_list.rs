@@ -1,7 +1,4 @@
-use crate::{
-    models::dto::todo_list, models::todo_list::*, service::todo_list_service::*,
-    utils::database_connection::Pool,
-};
+use crate::{models::dto::todo_list, models::todo_list::*, utils::database_connection::Pool};
 use actix_web::web::{self};
 use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};
 
@@ -11,23 +8,12 @@ use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};
         (status = 200, description = "Create list OK", body = String),
         (status = 500, description = "Create list FAILED", body = String)
     ),
-    params(InputTodoList),
 )]
-#[post("/new")]
-pub async fn add_list(
+#[post("/create")]
+pub async fn create_list(
     db: web::Data<Pool>,
-    item: web::Json<InputTodoList>,
+    item: web::Json<TodoListDTO>,
 ) -> Result<HttpResponse, Error> {
-    match web::block(move || add_single_list(db, item)).await {
-        Ok(list) => match serde_json::to_value(list.unwrap()) {
-            Ok(response_body) => Ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to create list: {}", e);
-                Ok(throw_response_error())
-            }
-        },
-        Err(_) => Ok(throw_response_error()),
-    }
 }
 
 #[utoipa::path(

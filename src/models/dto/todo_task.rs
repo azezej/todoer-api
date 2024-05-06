@@ -2,48 +2,43 @@ use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskName {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskNameDTO {
     pub task_id: i32,
     pub name: String,
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskDescription {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskDescriptionDTO {
     pub task_id: i32,
     pub description: String,
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskParentTaskID {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskParentTaskDTO {
     pub task_id: i32,
     pub parent_task_id: i32,
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskDueDate {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskDueDateDTO {
     pub task_id: i32,
     pub due_date: NaiveDate,
     pub modified_at: NaiveDateTime,
 }
 
-/*
-this below is maybe implementable if we plan to create a feature
-to move tasks between workspaces or between users
-*/
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskTodoListID {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskTodoListDTO {
     pub task_id: i32,
     pub todolist_id: i32,
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UpdateTodoTaskDone {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTodoTaskDoneDTO {
     pub task_id: i32,
     pub done: bool,
     pub modified_at: NaiveDateTime,

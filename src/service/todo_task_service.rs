@@ -1,5 +1,5 @@
 use crate::schema::todotasks::dsl::*;
-use crate::{models::dto::todo_task, models::todo_task::*, utils::database_connection::Pool};
+use crate::{models::dto::todo_task::*, models::todo_task::*, utils::database_connection::Pool};
 use actix_web::web::{self};
 use diesel::prelude::*;
 use diesel::{delete, insert_into, update, QueryDsl, RunQueryDsl};
@@ -18,12 +18,12 @@ pub fn db_get_task_by_id(
     todotasks.find(task_id).get_result::<TodoTask>(&mut conn)
 }
 
-pub fn add_single_task(
+pub fn create_task(
     pool: web::Data<Pool>,
-    item: web::Json<InputTodoTask>,
+    item: web::Json<TodoTaskDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = pool.get().unwrap();
-    let new_task = NewTodoTask {
+    let new_task = InputTodoTask {
         user_id: item.user_id,
         todolist_id: item.todolist_id,
         name: item.name.clone(),
@@ -36,7 +36,7 @@ pub fn add_single_task(
     };
 
     let res = insert_into(todotasks)
-        .values(&new_task)
+        .values(new_task)
         .get_result(&mut conn)?;
     Ok(res)
 }
@@ -52,7 +52,7 @@ pub fn delete_single_task(
 
 pub fn update_single_task_name(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskName>,
+    item: web::Json<UpdateTodoTaskNameDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)
@@ -67,7 +67,7 @@ pub fn update_single_task_name(
 
 pub fn update_single_task_description(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskDescription>,
+    item: web::Json<UpdateTodoTaskDescriptionDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)
@@ -82,7 +82,7 @@ pub fn update_single_task_description(
 
 pub fn update_single_task_parent_task_id(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskParentTaskID>,
+    item: web::Json<UpdateTodoTaskParentTaskDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)
@@ -97,7 +97,7 @@ pub fn update_single_task_parent_task_id(
 
 pub fn update_single_task_due_date(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskDueDate>,
+    item: web::Json<UpdateTodoTaskDueDateDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)
@@ -117,7 +117,7 @@ to move tasks between workspaces or between users
 
 pub fn update_single_task_todolist_id(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskTodoListID>,
+    item: web::Json<UpdateTodoTaskTodoListDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)
@@ -132,7 +132,7 @@ pub fn update_single_task_todolist_id(
 
 pub fn update_todo_task_done(
     db: web::Data<Pool>,
-    item: web::Json<todo_task::UpdateTodoTaskDone>,
+    item: web::Json<UpdateTodoTaskDoneDTO>,
 ) -> Result<TodoTask, diesel::result::Error> {
     let mut conn = db.get().unwrap();
     let task = diesel::update(todotasks)

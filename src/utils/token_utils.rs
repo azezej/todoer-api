@@ -21,7 +21,7 @@ pub fn verify_token(
     token_data: &TokenData<UserToken>,
     pool: &web::Data<Pool>,
 ) -> Result<String, String> {
-    if User::is_valid_login_session(&token_data.claims, *pool) {
+    if User::is_valid_login_session(&token_data.claims, pool.clone()) {
         Ok(token_data.claims.user.to_string())
     } else {
         Err("Invalid token".to_string())

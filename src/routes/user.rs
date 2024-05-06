@@ -20,13 +20,10 @@ use actix_web::{
 pub async fn register_user(
     user_dto: web::Json<UserDTO>,
     pool: web::Data<Pool>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ServiceError> {
     match user_service::signup(user_dto.0, &pool) {
-        Ok(token_res) => Ok(HttpResponse::Ok().json(ResponseBody::new(
-            constants::MESSAGE_LOGIN_SUCCESS,
-            token_res,
-        ))),
-        Err(_err) => Ok(HttpResponse::new(StatusCode::OK)),
+        Ok(message) => Ok(HttpResponse::Ok().json(ResponseBody::new(&message, constants::EMPTY))),
+        Err(err) => Err(err),
     }
 }
 

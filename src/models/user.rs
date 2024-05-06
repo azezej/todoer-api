@@ -1,7 +1,6 @@
 use crate::{
-    models::dto::user::*,
-    models::login_history::*,
-    models::user_token::*,
+    constants,
+    models::{dto::user::*, login_history::*, user_token::*},
     schema::users::{self, dsl::*},
     utils::database_connection::Pool,
 };
@@ -40,7 +39,7 @@ enum Role {
 }
 
 impl User {
-    pub fn signup(new_user: UserDTO, pool: web::Data<Pool>) -> Result<HttpResponse, String> {
+    pub fn signup(new_user: UserDTO, pool: web::Data<Pool>) -> Result<String, String> {
         let mut conn = pool.get().unwrap();
         if Self::find_user_by_username(&new_user.username, &pool).is_err() {
             let new_user = UserDTO {
@@ -50,7 +49,7 @@ impl User {
             diesel::insert_into(users)
                 .values(new_user)
                 .execute(&mut conn);
-            Ok(actix_web::HttpResponse::Ok().finish())
+            Ok(constants::MESSAGE_SIGNUP_SUCCESS.to_string())
         } else {
             Err(format!(
                 "User '{}' is already registered",
