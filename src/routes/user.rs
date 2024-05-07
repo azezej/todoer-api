@@ -22,7 +22,10 @@ pub async fn register_user(
     pool: web::Data<Pool>,
 ) -> Result<HttpResponse, ServiceError> {
     match user_service::signup(user_dto.0, &pool) {
-        Ok(message) => Ok(HttpResponse::Ok().json(ResponseBody::new(&message, constants::EMPTY))),
+        Ok(message) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+            constants::MESSAGE_SIGNUP_SUCCESS,
+            message,
+        ))),
         Err(err) => Err(err),
     }
 }

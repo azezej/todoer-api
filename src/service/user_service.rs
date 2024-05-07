@@ -6,7 +6,11 @@ use crate::{
     utils::database_connection::Pool,
     utils::token_utils,
 };
-use actix_web::{http::header::*, web, HttpResponse};
+use actix_web::{
+    http::header::*,
+    web::{self, Json},
+    HttpResponse,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -16,9 +20,9 @@ pub struct TokenBodyResponse {
     pub token_type: String,
 }
 
-pub fn signup(user: UserDTO, pool: &web::Data<Pool>) -> Result<String, ServiceError> {
+pub fn signup(user: UserDTO, pool: &web::Data<Pool>) -> Result<Json<LoginInfoDTO>, ServiceError> {
     match User::signup(user, pool.clone()) {
-        Ok(message) => Ok(message),
+        Ok(message) => Ok(Json(message)),
         Err(message) => Err(ServiceError::BadRequest {
             error_message: message,
         }),

@@ -14,6 +14,19 @@ pub struct UserDTO {
     pub password: String,
 }
 
+#[derive(Insertable, Serialize, Deserialize, Debug)]
+#[diesel(table_name = users)]
+pub struct NewUserDTO {
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub password: String,
+    pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
+    pub login_session: String,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct LoginDTO {
     pub username_or_email: String,
