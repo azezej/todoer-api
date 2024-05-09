@@ -1,6 +1,5 @@
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateTodoTaskNameDTO {

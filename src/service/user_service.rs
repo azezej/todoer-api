@@ -9,7 +9,6 @@ use crate::{
 use actix_web::{
     http::header::*,
     web::{self, Json},
-    HttpResponse,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;

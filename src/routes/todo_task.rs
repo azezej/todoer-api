@@ -1,12 +1,11 @@
 use crate::constants;
+use crate::error::ServiceError;
 use crate::models::dto::todo_task::*;
 use crate::models::response::ResponseBody;
-use crate::{
-    models::dto::todo_task, models::todo_task::*, service::todo_task_service::*,
-    utils::database_connection::Pool,
-};
-use actix_web::web;
-use actix_web::{delete, get, http::StatusCode, patch, post, Error, HttpResponse, Responder};
+use crate::service::todo_task_service;
+use crate::{models::todo_task::*, utils::database_connection::Pool};
+use actix_web::{delete, get, patch, post, HttpResponse};
+use actix_web::{web, HttpRequest};
 
 #[utoipa::path(
     context_path = "/tasks",
@@ -17,38 +16,48 @@ use actix_web::{delete, get, http::StatusCode, patch, post, Error, HttpResponse,
 )]
 #[post("/create")]
 pub async fn create_task(
-    db: web::Data<Pool>,
+    req: HttpRequest,
     item: web::Json<TodoTaskDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::new(item.0, db) {
-        Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
-            constants::MESSAGE_LOGIN_SUCCESS,
-            response_body,
-        ))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::create_task(authen_header, pool, item.0) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Get all tasks OK", body = String),
-        (status = 500, description = "Get all tasks FAILED", body = String)
-    )
-)]
 #[get("/")]
-pub async fn get_tasks(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
-    match TodoTask::get_all_tasks(db) {
-        Ok(tasks) => {
-            Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_LOGIN_SUCCESS, tasks)))
+pub async fn get_tasks(
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::get_all_tasks(authen_header, pool) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
         }
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -60,15 +69,22 @@ pub async fn get_tasks(db: web::Data<Pool>) -> Result<HttpResponse, Error> {
     )
 )]
 #[get("/{id}")]
-pub async fn get_task_by_id(db: web::Data<Pool>, task_id: web::Path<i32>) -> HttpResponse {
-    match TodoTask::db_get_task_by_id(*task_id, db) {
-        Ok(task) => {
-            HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_LOGIN_SUCCESS, task))
+pub async fn get_task_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::db_get_task_by_id(authen_header, &pool, task_id.clone()) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
         }
-        Err(_) => HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        )),
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -81,17 +97,25 @@ pub async fn get_task_by_id(db: web::Data<Pool>, task_id: web::Path<i32>) -> Htt
 )]
 #[delete("/{id}")]
 pub async fn delete_task(
-    db: web::Data<Pool>,
+    req: HttpRequest,
+    pool: web::Data<Pool>,
     task_id: web::Path<i32>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::delete_single_task(db, *task_id) {
-        Ok(_) => {
-            Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, constants::EMPTY)))
+) -> Result<HttpResponse, ServiceError>{
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::delete_single_task(authen_header, pool, task_id.clone()) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
         }
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -104,15 +128,25 @@ pub async fn delete_task(
 )]
 #[patch("/update/name/{id}")]
 pub async fn patch_task_name(
-    db: web::Data<Pool>,
+    req: HttpRequest,
+    pool: web::Data<Pool>,
     input: web::Json<UpdateTodoTaskNameDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_single_task_name(db, input.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_name(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -125,15 +159,25 @@ pub async fn patch_task_name(
 )]
 #[patch("/update/description/{id}")]
 pub async fn patch_task_description(
-    db: web::Data<Pool>,
+    req: HttpRequest,
+    pool: web::Data<Pool>,
     input: web::Json<UpdateTodoTaskDescriptionDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_single_task_description(db, input.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_description(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -146,15 +190,25 @@ pub async fn patch_task_description(
 )]
 #[patch("/update/todolistid/{id}")]
 pub async fn patch_task_todolist_id(
-    db: web::Data<Pool>,
-    result: web::Json<UpdateTodoTaskTodoListDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_single_task_todolist_id(db, result.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoTaskTodoListDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_todolist_id(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -167,15 +221,25 @@ pub async fn patch_task_todolist_id(
 )]
 #[patch("/update/duedate/{id}")]
 pub async fn patch_task_due_date(
-    db: web::Data<Pool>,
-    result: web::Json<UpdateTodoTaskDueDateDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_single_task_due_date(db, result.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoTaskDueDateDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_due_date(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -188,15 +252,25 @@ pub async fn patch_task_due_date(
 )]
 #[patch("/update/parenttaskid/{id}")]
 pub async fn patch_task_parent_task_id(
-    db: web::Data<Pool>,
-    task_id: web::Json<UpdateTodoTaskParentTaskDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_single_task_parent_task_id(db, task_id.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoTaskParentTaskDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_parent_task_id(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -209,14 +283,24 @@ pub async fn patch_task_parent_task_id(
 )]
 #[patch("/update/done/{id}")]
 pub async fn patch_task_done(
-    db: web::Data<Pool>,
-    result: web::Json<UpdateTodoTaskDoneDTO>,
-) -> Result<HttpResponse, Error> {
-    match TodoTask::update_todo_task_done(db, result.0) {
-        Ok(task) => Ok(HttpResponse::Ok().json(ResponseBody::new(constants::MESSAGE_OK, task))),
-        Err(_) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
-            constants::MESSAGE_INTERNAL_SERVER_ERROR,
-            constants::EMPTY,
-        ))),
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoTaskDoneDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_task_service::update_single_task_done(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }

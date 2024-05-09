@@ -53,7 +53,6 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut authenticate_pass: bool = false;
-
         // Bypass some account routes
         let mut headers = req.headers().clone();
         headers.append(

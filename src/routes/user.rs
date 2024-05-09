@@ -6,7 +6,7 @@ use crate::{
     utils::database_connection::Pool,
 };
 use actix_web::{
-    delete, get, http::StatusCode, patch, post, web, Error, HttpRequest, HttpResponse, Responder,
+    get, post, web, HttpRequest, HttpResponse, 
 };
 
 #[utoipa::path(post,
@@ -47,11 +47,13 @@ pub async fn login(
 #[post("/auth/logout")]
 pub async fn logout(req: HttpRequest, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
     if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
-        user_service::logout(authen_header, &pool);
-        Ok(HttpResponse::Ok().json(ResponseBody::new(
+        match user_service::logout(authen_header, &pool) {
+            Ok(_) => Ok(HttpResponse::Ok().json(ResponseBody::new(
             constants::MESSAGE_LOGOUT_SUCCESS,
             constants::EMPTY,
-        )))
+            ))),
+            Err(err) => Err(err), 
+        }
     } else {
         Err(ServiceError::BadRequest {
             error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),

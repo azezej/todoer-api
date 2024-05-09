@@ -1,113 +1,220 @@
-use crate::schema::todotasks::dsl::*;
+use crate::constants;
+use crate::models::user::User;
+use crate::utils::token_utils;
+use crate::error::ServiceError;
 use crate::{models::dto::todo_task::*, models::todo_task::*, utils::database_connection::Pool};
+use actix_web::http::header::HeaderValue;
 use actix_web::web::{self};
-use diesel::prelude::*;
-use diesel::{delete, insert_into, update, QueryDsl, RunQueryDsl};
 
-pub fn get_all_tasks(pool: web::Data<Pool>) -> Result<Vec<TodoTask>, diesel::result::Error> {
-    let mut conn = pool.get().unwrap();
-    let items = todotasks.load::<TodoTask>(&mut conn)?;
-    Ok(items)
+pub fn get_all_tasks(authen_header: &HeaderValue, pool: web::Data<Pool>) -> Result<Vec<TodoTask>, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::get_all_tasks(uid, pool) {
+                            Ok(tasks) => {
+                                return Ok(tasks);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_TASKS_NOT_FOUND_FOR_USER.to_string() });
+                            }
+                        }
+                    } else {
+                        return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+
 }
 
 pub fn db_get_task_by_id(
-    pool: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: &web::Data<Pool>,
     task_id: i32,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = pool.get().unwrap();
-    todotasks.find(task_id).get_result::<TodoTask>(&mut conn)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::db_get_task_by_id(task_id, uid, pool.clone()) {
+                            Ok(task) => {
+                                return Ok(task);
+                            }, 
+                            Err(_) => {
+                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_GET_TASK_BY_ID.to_string()});
+                            }
+                        }
+                    } else {
+                        return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
 }
 
 pub fn create_task(
+    authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<TodoTaskDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = pool.get().unwrap();
-    let new_task = InputTodoTask {
-        user_id: item.user_id,
-        todolist_id: item.todolist_id,
-        name: item.name.clone(),
-        description: item.description.clone(),
-        parent_task_id: item.parent_task_id,
-        done: false,
-        due_date: item.due_date,
-        created_at: chrono::Local::now().naive_local(),
-        modified_at: chrono::Local::now().naive_local(),
-    };
-
-    let res = insert_into(todotasks)
-        .values(new_task)
-        .get_result(&mut conn)?;
-    Ok(res)
+    item: TodoTaskDTO,
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::new(item, uid, pool) {
+                            Ok(task) => {
+                                return Ok(task);
+                            }, 
+                            Err(e) => {
+                                return Err(ServiceError::InternalServerError { error_message: e.to_string() });
+                            }
+                        }
+                    } else {
+                        return Err(ServiceError::BadRequest {
+                            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
 pub fn delete_single_task(
-    db: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     task_id: i32,
-) -> Result<usize, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let deletion = delete(todotasks.find(task_id)).execute(&mut conn)?;
-    Ok(deletion)
+) -> Result<usize, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::delete_single_task(task_id, uid, pool) {
+                            Ok(deletion) => {
+                                return Ok(deletion);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_DELETE_TASK.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
 pub fn update_single_task_name(
-    db: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     item: web::Json<UpdateTodoTaskNameDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(name.eq(&item.name))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_name(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_NAME.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
 pub fn update_single_task_description(
-    db: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     item: web::Json<UpdateTodoTaskDescriptionDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(description.eq(&item.description))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
-}
-
-pub fn update_single_task_parent_task_id(
-    db: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskParentTaskDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(parent_task_id.eq(&item.parent_task_id))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_description(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DESCRIPTION.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
 pub fn update_single_task_due_date(
-    db: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     item: web::Json<UpdateTodoTaskDueDateDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(due_date.eq(&item.due_date))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_due_date(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DUE_DATE.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
 /*
@@ -116,31 +223,91 @@ to move tasks between workspaces or between users
 */
 
 pub fn update_single_task_todolist_id(
-    db: web::Data<Pool>,
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     item: web::Json<UpdateTodoTaskTodoListDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(todolist_id.eq(&item.todolist_id))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_todolist_id(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_TODO_LIST.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }
 
-pub fn update_todo_task_done(
-    db: web::Data<Pool>,
+pub fn update_single_task_done(
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
     item: web::Json<UpdateTodoTaskDoneDTO>,
-) -> Result<TodoTask, diesel::result::Error> {
-    let mut conn = db.get().unwrap();
-    let task = diesel::update(todotasks)
-        .set(done.eq(&item.done))
-        .filter(id.eq(&item.task_id))
-        .get_result(&mut conn)?;
-    let _ = update(todotasks)
-        .set(modified_at.eq(chrono::Local::now().naive_local()))
-        .filter(id.eq(&item.task_id));
-    Ok(task)
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_done(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DONE.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
+}
+
+pub fn update_single_task_parent_task_id(
+    authen_header: &HeaderValue,
+    pool: web::Data<Pool>,
+    item: web::Json<UpdateTodoTaskParentTaskDTO>,
+) -> Result<TodoTask, ServiceError> {
+    if let Ok(authen_str) = authen_header.to_str() {
+        if token_utils::is_auth_header_valid(authen_header) {
+            let token = authen_str[6..authen_header.len()].trim();
+            if let Ok(token_data) = token_utils::decode_token(token.to_string()) {
+                if let Ok(username) = token_utils::verify_token(&token_data, &pool) {
+                    if let Ok(user) = User::find_user_by_username(&username, &pool) {
+                        let uid = user.id;
+                        match TodoTask::update_single_task_parent_task_id(item.0, uid, pool) {
+                            Ok(update) => {
+                                return Ok(update);
+                            },
+                            Err(_) => {
+                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DONE.to_string() });
+                            }
+                       }
+                    }
+                }
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
+        error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+    })
 }

@@ -1,12 +1,13 @@
 use crate::models::dto::todo_task::*;
 use crate::schema::todotasks::{self, dsl::*};
-use crate::{routes::todo_task::*, utils::database_connection::Pool};
+use crate::utils::database_connection::Pool;
 use actix_web::web;
 use chrono::{NaiveDate, NaiveDateTime};
+use diesel::result::Error;
 use diesel::{prelude::*, Queryable};
 use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, OpenApi};
-pub struct TodoTaskApiDoc;
+use utoipa::IntoParams;
+
 
 #[derive(Debug, Serialize, Deserialize, Queryable, IntoParams)]
 pub struct TodoTask {
@@ -25,7 +26,6 @@ pub struct TodoTask {
 #[derive(Serialize, Deserialize, Insertable, Debug, IntoParams)]
 #[diesel(table_name = todotasks)]
 pub struct TodoTaskDTO {
-    pub user_id: i32,
     pub todolist_id: i32,
     pub name: String,
     pub description: Option<String>,
@@ -48,59 +48,105 @@ pub struct InputTodoTask {
 }
 
 impl TodoTask {
-    pub fn new(new_task: TodoTaskDTO, pool: web::Data<Pool>) -> QueryResult<usize> {
+    pub fn new(
+        new_task: TodoTaskDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
+    ) -> Result<TodoTask, Error> {
         let mut conn = pool.get().unwrap();
-        diesel::insert_into(todotasks)
-            .values(new_task)
-            .execute(&mut conn)
+
+        let task = InputTodoTask {
+            user_id: uid,
+            todolist_id: new_task.todolist_id,
+            name: new_task.name.clone(),
+            description: new_task.description.clone(),
+            parent_task_id: new_task.parent_task_id,
+            done: false,
+            due_date: new_task.due_date,
+            created_at: chrono::Local::now().naive_local(),
+            modified_at: chrono::Local::now().naive_local(),
+        };
+        let effect = diesel::insert_into(todotasks)
+            .values(&task)
+            .returning(todotasks::all_columns)
+            .get_result::<TodoTask>(&mut conn);
+        match effect {
+           Ok(task) => {
+               return Ok(task);
+           },
+           Err(e) => {
+               return Err(e);
+           } 
+        }
     }
 
-    pub fn get_all_tasks(pool: web::Data<Pool>) -> Result<Vec<TodoTask>, diesel::result::Error> {
+    pub fn get_all_tasks(
+        uid: i32,
+        pool: web::Data<Pool>,
+    ) -> Result<Vec<TodoTask>, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
-        let items = todotasks.load::<TodoTask>(&mut conn)?;
-        Ok(items)
+
+        let items = todotasks
+            .filter(user_id.eq(uid))
+            .load::<TodoTask>(&mut conn)?;
+        Ok(items) 
     }
 
     pub fn db_get_task_by_id(
         task_id: i32,
+        uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
-        todotasks.find(task_id).get_result::<TodoTask>(&mut conn)
+
+        todotasks
+            .filter(user_id.eq(uid))
+            .filter(id.eq(task_id))
+            .get_result::<TodoTask>(&mut conn)
     }
 
     pub fn delete_single_task(
-        db: web::Data<Pool>,
         task_id: i32,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<usize, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
-        let deletion = diesel::delete(todotasks.find(task_id)).execute(&mut conn)?;
+        let mut conn = pool.get().unwrap();
+
+        let deletion = diesel::delete(todotasks.filter(user_id.eq(uid)).filter(id.eq(task_id)))
+            .execute(&mut conn)?;
         Ok(deletion)
     }
 
     pub fn update_single_task_name(
-        db: web::Data<Pool>,
         item: UpdateTodoTaskNameDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
+
         let task = diesel::update(todotasks)
             .set(name.eq(&item.name))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id));
         Ok(task)
     }
 
     pub fn update_single_task_description(
-        db: web::Data<Pool>,
         item: UpdateTodoTaskDescriptionDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
+
         let task = diesel::update(todotasks)
             .set(description.eq(&item.description))
             .filter(id.eq(&item.task_id))
+            .filter(user_id.eq(uid))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
@@ -109,42 +155,52 @@ impl TodoTask {
     }
 
     pub fn update_single_task_parent_task_id(
-        db: web::Data<Pool>,
         item: UpdateTodoTaskParentTaskDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
+
         let task = diesel::update(todotasks)
             .set(parent_task_id.eq(&item.parent_task_id))
             .filter(id.eq(&item.task_id))
+            .filter(user_id.eq(uid))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(&item.task_id))
+            .filter(user_id.eq(uid));
         Ok(task)
     }
 
     pub fn update_single_task_due_date(
-        db: web::Data<Pool>,
         item: UpdateTodoTaskDueDateDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
+
         let task = diesel::update(todotasks)
             .set(due_date.eq(&item.due_date))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id));
         Ok(task)
     }
 
     pub fn update_single_task_todolist_id(
-        db: web::Data<Pool>,
         item: UpdateTodoTaskTodoListDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
         let task = diesel::update(todotasks)
             .set(todolist_id.eq(&item.todolist_id))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
@@ -153,17 +209,20 @@ impl TodoTask {
         Ok(task)
     }
 
-    pub fn update_todo_task_done(
-        db: web::Data<Pool>,
+    pub fn update_single_task_done (
         item: UpdateTodoTaskDoneDTO,
+        uid: i32,
+        pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
-        let mut conn = db.get().unwrap();
+        let mut conn = pool.get().unwrap();
         let task = diesel::update(todotasks)
             .set(done.eq(&item.done))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
+            .filter(user_id.eq(uid))
             .filter(id.eq(&item.task_id));
         Ok(task)
     }

@@ -7,7 +7,7 @@ CREATE TABLE todotasks (
     description TEXT,
     parent_task_id INT,
     due_date DATE,
-    done BOOLEAN NOT NULL,
+    done BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL,
     modified_at TIMESTAMP NOT NULL
 )
