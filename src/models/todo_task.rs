@@ -2,14 +2,12 @@ use crate::models::dto::todo_task::*;
 use crate::schema::todotasks::{self, dsl::*};
 use crate::utils::database_connection::Pool;
 use actix_web::web;
-use apistos::ApiComponent;
 use chrono::{NaiveDate, NaiveDateTime};
 use diesel::result::Error;
 use diesel::{prelude::*, Queryable};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Queryable, JsonSchema, ApiComponent)]
+#[derive(Debug, Serialize, Deserialize, Queryable)]
 pub struct TodoTask {
     pub id: i32,
     pub user_id: i32,
@@ -23,7 +21,7 @@ pub struct TodoTask {
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Insertable, Debug, JsonSchema, ApiComponent)]
+#[derive(Serialize, Deserialize, Insertable, Debug)]
 #[diesel(table_name = todotasks)]
 pub struct TodoTaskDTO {
     pub todolist_id: i32,
