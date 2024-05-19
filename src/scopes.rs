@@ -1,7 +1,4 @@
-use crate::models::{todo_list::TodoListApiDoc};
 use crate::routes;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::{SwaggerUi, Url};
 
 pub fn user_scope() -> actix_web::Scope {
     actix_web::Scope::new("/users")
@@ -34,21 +31,4 @@ pub fn todo_list_scope() -> actix_web::Scope {
         .service(routes::todo_list::patch_list_description)
         .service(routes::todo_list::patch_list_shared_with)
         .service(routes::todo_list::patch_list_parent_list_id)
-}
-
-pub fn swagger() -> SwaggerUi {
-    SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
-        // (
-        //     Url::new("UserApiDoc", "/api-docs/users.json"),
-        //     UserApiDoc::openapi(),
-        // ),
-        (
-            Url::new("TodoListApiDoc", "/api-docs/todolist.json"),
-            TodoListApiDoc::openapi(),
-        ),
-        //(
-        // Url::new("TodoTaskApiDoc", "/api-docs/todotask.json"),
-        // TodoTaskApiDoc::openapi(),
-        //),
-    ])
 }

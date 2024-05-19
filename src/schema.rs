@@ -15,7 +15,7 @@ diesel::table! {
         shared_with -> Nullable<Text>,
         parent_list_id -> Nullable<Int4>,
         #[max_length = 255]
-        name -> Varchar,
+        title -> Varchar,
         description -> Nullable<Text>,
         created_at -> Timestamp,
         modified_at -> Timestamp,
@@ -28,7 +28,7 @@ diesel::table! {
         user_id -> Int4,
         todolist_id -> Int4,
         #[max_length = 255]
-        name -> Varchar,
+        summary -> Varchar,
         description -> Nullable<Text>,
         parent_task_id -> Nullable<Int4>,
         due_date -> Nullable<Date>,

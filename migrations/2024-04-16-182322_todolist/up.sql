@@ -4,7 +4,7 @@ CREATE TABLE todolists (
     user_id INT NOT NULL,
     shared_with TEXT,
     parent_list_id INT,
-    name VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP NOT NULL,
     modified_at TIMESTAMP NOT NULL

@@ -2,19 +2,19 @@ use crate::models::dto::todo_task::*;
 use crate::schema::todotasks::{self, dsl::*};
 use crate::utils::database_connection::Pool;
 use actix_web::web;
+use apistos::ApiComponent;
 use chrono::{NaiveDate, NaiveDateTime};
 use diesel::result::Error;
 use diesel::{prelude::*, Queryable};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use utoipa::IntoParams;
 
-
-#[derive(Debug, Serialize, Deserialize, Queryable, IntoParams)]
+#[derive(Debug, Serialize, Deserialize, Queryable, JsonSchema, ApiComponent)]
 pub struct TodoTask {
     pub id: i32,
     pub user_id: i32,
     pub todolist_id: i32,
-    pub name: String,
+    pub summary: String,
     pub description: Option<String>,
     pub parent_task_id: Option<i32>,
     pub due_date: Option<NaiveDate>,
@@ -23,22 +23,22 @@ pub struct TodoTask {
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Insertable, Debug, IntoParams)]
+#[derive(Serialize, Deserialize, Insertable, Debug, JsonSchema, ApiComponent)]
 #[diesel(table_name = todotasks)]
 pub struct TodoTaskDTO {
     pub todolist_id: i32,
-    pub name: String,
+    pub summary: String,
     pub description: Option<String>,
     pub parent_task_id: Option<i32>,
     pub due_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Serialize, Insertable, Deserialize, IntoParams)]
+#[derive(Debug, Serialize, Insertable, Deserialize)]
 #[diesel(table_name = todotasks)]
 pub struct InputTodoTask {
     pub user_id: i32,
     pub todolist_id: i32,
-    pub name: String,
+    pub summary: String,
     pub description: Option<String>,
     pub parent_task_id: Option<i32>,
     pub done: bool,
@@ -58,7 +58,7 @@ impl TodoTask {
         let task = InputTodoTask {
             user_id: uid,
             todolist_id: new_task.todolist_id.clone(),
-            name: new_task.name.clone(),
+            summary: new_task.summary.clone(),
             description: new_task.description.clone(),
             parent_task_id: new_task.parent_task_id.clone(),
             done: false,
@@ -117,22 +117,22 @@ impl TodoTask {
         Ok(deletion)
     }
 
-    pub fn update_single_task_name(
-        item: UpdateTodoTaskNameDTO,
+    pub fn update_single_task_summary(
+        item: UpdateTodoTaskSummaryDTO,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
 
         let task = diesel::update(todotasks)
-            .set(name.eq(&item.name))
+            .set(summary.eq(item.summary))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id))
+            .filter(id.eq(item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(item.task_id));
         Ok(task)
     }
 
@@ -144,13 +144,13 @@ impl TodoTask {
         let mut conn = pool.get().unwrap();
 
         let task = diesel::update(todotasks)
-            .set(description.eq(&item.description))
-            .filter(id.eq(&item.task_id))
+            .set(description.eq(item.description))
+            .filter(id.eq(item.task_id))
             .filter(user_id.eq(uid))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(item.task_id));
         Ok(task)
     }
 
@@ -162,13 +162,13 @@ impl TodoTask {
         let mut conn = pool.get().unwrap();
 
         let task = diesel::update(todotasks)
-            .set(parent_task_id.eq(&item.parent_task_id))
-            .filter(id.eq(&item.task_id))
+            .set(parent_task_id.eq(item.parent_task_id))
+            .filter(id.eq(item.task_id))
             .filter(user_id.eq(uid))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
-            .filter(id.eq(&item.task_id))
+            .filter(id.eq(item.task_id))
             .filter(user_id.eq(uid));
         Ok(task)
     }
@@ -181,14 +181,14 @@ impl TodoTask {
         let mut conn = pool.get().unwrap();
 
         let task = diesel::update(todotasks)
-            .set(due_date.eq(&item.due_date))
+            .set(due_date.eq(item.due_date))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id))
+            .filter(id.eq(item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(item.task_id));
         Ok(task)
     }
 
@@ -199,13 +199,13 @@ impl TodoTask {
     ) -> Result<TodoTask, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
         let task = diesel::update(todotasks)
-            .set(todolist_id.eq(&item.todolist_id))
+            .set(todolist_id.eq(item.todolist_id))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id))
+            .filter(id.eq(item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(item.task_id));
         Ok(task)
     }
 
@@ -216,14 +216,14 @@ impl TodoTask {
     ) -> Result<TodoTask, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
         let task = diesel::update(todotasks)
-            .set(done.eq(&item.done))
+            .set(done.eq(item.done))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id))
+            .filter(id.eq(item.task_id))
             .get_result(&mut conn)?;
         let _ = diesel::update(todotasks)
             .set(modified_at.eq(chrono::Local::now().naive_local()))
             .filter(user_id.eq(uid))
-            .filter(id.eq(&item.task_id));
+            .filter(id.eq(item.task_id));
         Ok(task)
     }
 }

@@ -7,13 +7,6 @@ use crate::{models::todo_task::*, utils::database_connection::Pool};
 use actix_web::{delete, get, patch, post, HttpResponse};
 use actix_web::{web, HttpRequest};
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Create task by id OK", body = String),
-        (status = 500, description = "Create task by id FAILED", body = String)
-    )
-)]
 #[post("/create")]
 pub async fn create_task(
     req: HttpRequest,
@@ -38,13 +31,6 @@ pub async fn create_task(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Get all tasks from user OK", body = String),
-        (status = 500, description = "Get all tasks from user FAILED", body = String)
-    )
-)]
 #[get("/")]
 pub async fn get_tasks(
     req: HttpRequest,
@@ -68,13 +54,6 @@ pub async fn get_tasks(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Get task by id OK", body = String),
-        (status = 500, description = "Get task by id FAILED", body = String)
-    )
-)]
 #[get("/{id}")]
 pub async fn get_task_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
     if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
@@ -95,13 +74,6 @@ pub async fn get_task_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Delete task by id OK", body = String),
-        (status = 500, description = "Delete task by id FAILED", body = String)
-    )
-)]
 #[delete("/{id}")]
 pub async fn delete_task(
     req: HttpRequest,
@@ -126,18 +98,11 @@ pub async fn delete_task(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task name by id OK", body = String),
-        (status = 500, description = "Patch task name by id FAILED", body = String)
-    )
-)]
 #[patch("/update/name/{id}")]
 pub async fn patch_task_name(
     req: HttpRequest,
     pool: web::Data<Pool>,
-    input: web::Json<UpdateTodoTaskNameDTO>,
+    input: web::Json<UpdateTodoTaskSummaryDTO>,
 ) -> Result<HttpResponse, ServiceError> {
     if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
         match todo_task_service::update_single_task_name(authen_header, pool, input) {
@@ -157,13 +122,6 @@ pub async fn patch_task_name(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task description by id OK", body = String),
-        (status = 500, description = "Patch task description by id FAILED", body = String)
-    )
-)]
 #[patch("/update/description/{id}")]
 pub async fn patch_task_description(
     req: HttpRequest,
@@ -188,13 +146,6 @@ pub async fn patch_task_description(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task todolist id by id OK", body = String),
-        (status = 500, description = "Patch task todolist id by id FAILED", body = String)
-    )
-)]
 #[patch("/update/todolistid/{id}")]
 pub async fn patch_task_todolist_id(
     req: HttpRequest,
@@ -219,13 +170,6 @@ pub async fn patch_task_todolist_id(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task duedate by id OK", body = String),
-        (status = 500, description = "Patch task duedate by id FAILED", body = String)
-    )
-)]
 #[patch("/update/duedate/{id}")]
 pub async fn patch_task_due_date(
     req: HttpRequest,
@@ -250,13 +194,6 @@ pub async fn patch_task_due_date(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task parent task id by id OK", body = String),
-        (status = 500, description = "Patch task parent task id by id FAILED", body = String)
-    )
-)]
 #[patch("/update/parenttaskid/{id}")]
 pub async fn patch_task_parent_task_id(
     req: HttpRequest,
@@ -281,13 +218,6 @@ pub async fn patch_task_parent_task_id(
     }
 }
 
-#[utoipa::path(
-    context_path = "/tasks",
-    responses(
-        (status = 200, description = "Patch task done by id OK", body = String),
-        (status = 500, description = "Patch task done by id FAILED", body = String)
-    )
-)]
 #[patch("/update/done/{id}")]
 pub async fn patch_task_done(
     req: HttpRequest,

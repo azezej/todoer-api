@@ -1,31 +1,17 @@
 use crate::schema::todolists::{self, dsl::*};
 use crate::utils::database_connection::Pool;
 use crate::models::dto::todo_list::*;
-use crate::routes::todo_list;
 use actix_web::web;
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, update, Queryable};
 use serde::{Deserialize, Serialize};
-use utoipa::{OpenApi, ToSchema, IntoParams};
-
-#[derive(Debug, Serialize, Deserialize, OpenApi)]
-#[openapi(
-    paths(
-        todo_list::create_list, todo_list::get_lists,
-        todo_list::get_list_by_id, todo_list::delete_list,
-        todo_list::patch_list_name, todo_list::patch_list_description,
-        todo_list::patch_list_shared_with, todo_list::patch_list_parent_list_id 
-    )
-)]
-pub struct TodoListApiDoc;
-
-#[derive(Debug, Serialize, Deserialize, Queryable, ToSchema, IntoParams)]
+#[derive(Debug, Serialize, Deserialize, Queryable)]
 pub struct TodoList {
     pub id: i32,
     pub user_id: i32,
     pub shared_with: Option<String>,
     pub parent_list_id: Option<i32>,
-    pub name: String,
+    pub title: String,
     pub description: Option<String>,
     pub created_at: NaiveDateTime,
     pub modified_at: NaiveDateTime,
@@ -37,7 +23,7 @@ pub struct InputTodoList {
     pub user_id: i32,
     pub shared_with: Option<String>,
     pub parent_list_id: Option<i32>,
-    pub name: String,
+    pub title: String,
     pub description: Option<String>,
     pub created_at: NaiveDateTime,
     pub modified_at: NaiveDateTime,
@@ -52,7 +38,7 @@ impl TodoList {
         let mut conn = pool.get().unwrap();
         let new_list = InputTodoList {
             user_id: uid,
-            name: new_item.name.clone(),
+            title: new_item.title.clone(),
             description: new_item.description.clone(),
             shared_with: new_item.shared_with.clone(),
             parent_list_id: new_item.parent_list_id.clone(),
@@ -104,15 +90,15 @@ impl TodoList {
         Ok(deletion)
     }
 
-    pub fn update_single_list_name(
-        item: UpdateTodoListNameDTO,
+    pub fn update_single_list_title(
+        item: UpdateTodoListTitleDTO,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoList, diesel::result::Error> {
         let mut conn = pool.get().unwrap();
 
         let task = diesel::update(todolists)
-            .set(name.eq(&item.name))
+            .set(title.eq(&item.title))
             .filter(user_id.eq(uid))
             .filter(id.eq(&item.id))
             .get_result(&mut conn)?;

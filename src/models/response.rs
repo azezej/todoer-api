@@ -25,6 +25,7 @@ pub struct Page<T> {
 }
 
 impl<T> Page<T> {
+    #[allow(dead_code)]
     pub fn new(
         message: &str,
         data: Vec<T>,

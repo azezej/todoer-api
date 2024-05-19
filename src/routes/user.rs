@@ -9,13 +9,6 @@ use actix_web::{
     get, post, web, HttpRequest, HttpResponse, 
 };
 
-#[utoipa::path(post,
-        context_path = "/users",
-        responses(
-            (status = 200, description = "Create user", body = String),
-            (status = 500, description = "Create user failed", body = String)
-        )
-    )]
 #[post("/auth/register")]
 pub async fn register_user(
     user_dto: web::Json<UserDTO>,

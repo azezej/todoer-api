@@ -11,10 +11,9 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, Identifiable};
 use serde::{Deserialize, Serialize};
-use utoipa::IntoParams;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, Identifiable, Queryable, IntoParams)]
+#[derive(Debug, Serialize, Deserialize, Identifiable, Queryable)]
 pub struct User {
     pub id: i32,
     pub username: String,

@@ -147,15 +147,15 @@ pub fn update_single_list_parent_list_id(
     })
 }
 
-pub fn update_single_list_name(
+pub fn update_single_list_title(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoListNameDTO>,
+    item: web::Json<UpdateTodoListTitleDTO>,
 ) -> Result<TodoList, ServiceError> {
    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            match TodoList::update_single_list_name(item.0, uid, pool) {
+            match TodoList::update_single_list_title(item.0, uid, pool) {
                 Ok(update) => {
                     return Ok(update);
                 },
