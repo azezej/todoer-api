@@ -26,6 +26,6 @@ pub struct UpdateTodoListSharedWithDTO {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateTodoListParentListIdDTO {
     pub id: i32,
-    pub name: String,
+    pub parent_list_id: i32,
     pub modified_at: NaiveDateTime,
 }
