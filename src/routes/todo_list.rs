@@ -7,11 +7,13 @@ use actix_web::web::{self};
 use actix_web::{delete, get, patch, post, HttpRequest, HttpResponse};
 
 #[utoipa::path(
-    context_path = "/lists",
-    responses(
-        (status = 200, description = "Create list by id OK", body = String),
-        (status = 500, description = "Create list by id FAILED", body = String)
-    )
+   post,
+   path = "/lists/create",
+   responses(
+        (status = 200, description = "Create list OK", body = json),
+        (status = 500, description = "Create list FAILED", body = json)
+   ),
+   params(TodoListDTO),
 )]
 #[post("/create")]
 pub async fn create_list(
@@ -37,6 +39,14 @@ pub async fn create_list(
     }
 }
 
+#[utoipa::path(
+   get,
+   path = "/lists/",
+   responses(
+        (status = 200, description = "Get list OK", body = String),
+        (status = 500, description = "Get list FAILED", body = String)
+   ),
+)]
 #[get("/")]
 pub async fn get_lists(
     req: HttpRequest,
@@ -65,7 +75,7 @@ pub async fn get_lists(
     responses(
         (status = 200, description = "Get list by id OK", body = String),
         (status = 500, description = "Get list by id FAILED", body = String)
-    )
+    ),
 )]
 #[get("/{id}")]
 pub async fn get_list_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
@@ -123,7 +133,8 @@ pub async fn delete_list(
     responses(
         (status = 200, description = "Patch list shared with by id OK", body = String),
         (status = 500, description = "Patch list shared with by id FAILED", body = String)
-    )
+    ),
+    params(UpdateTodoListSharedWithDTO),
 )]
 #[patch("/update/sharedwith/{id}")]
 pub async fn patch_list_shared_with(
@@ -154,7 +165,8 @@ pub async fn patch_list_shared_with(
     responses(
         (status = 200, description = "Patch list's parent list by id OK", body = String),
         (status = 500, description = "Patch list's parent list by id FAILED", body = String)
-    )
+    ),
+    params(UpdateTodoListParentListIdDTO),
 )]
 #[patch("/update/parentlist/{id}")]
 pub async fn patch_list_parent_list_id(
@@ -185,7 +197,8 @@ pub async fn patch_list_parent_list_id(
     responses(
         (status = 200, description = "Patch list name by id OK", body = String),
         (status = 500, description = "Patch list name by id FAILED", body = String)
-    )
+    ),
+    params(UpdateTodoListNameDTO),
 )]
 #[patch("/update/name/{id}")]
 pub async fn patch_list_name(
@@ -216,7 +229,8 @@ pub async fn patch_list_name(
     responses(
         (status = 200, description = "Patch list description by id OK", body = String),
         (status = 500, description = "Patch list description by id FAILED", body = String)
-    )
+    ),
+    params(UpdateTodoListDescriptionDTO),
 )]
 #[patch("/update/description/{id}")]
 pub async fn patch_list_description(

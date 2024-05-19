@@ -1,7 +1,7 @@
 use crate::constants;
 use crate::error::ServiceError;
 use crate::middleware::verify_auth;
-use crate::models::todo_list::TodoListDTO;
+use crate::models::dto::todo_list::TodoListDTO;
 use crate::{
     models::todo_list::TodoList, utils::database_connection::Pool,
     models::dto::todo_list::*,
