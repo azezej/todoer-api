@@ -13,9 +13,10 @@ diesel::table! {
         id -> Int4,
         user_id -> Int4,
         shared_with -> Nullable<Text>,
+        parent_list_id -> Nullable<Int4>,
         #[max_length = 255]
         name -> Varchar,
-        description -> Text,
+        description -> Nullable<Text>,
         created_at -> Timestamp,
         modified_at -> Timestamp,
     }

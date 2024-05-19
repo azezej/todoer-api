@@ -38,6 +38,13 @@ pub async fn create_task(
     }
 }
 
+#[utoipa::path(
+    context_path = "/tasks",
+    responses(
+        (status = 200, description = "Get all tasks from user OK", body = String),
+        (status = 500, description = "Get all tasks from user FAILED", body = String)
+    )
+)]
 #[get("/")]
 pub async fn get_tasks(
     req: HttpRequest,
@@ -71,7 +78,7 @@ pub async fn get_tasks(
 #[get("/{id}")]
 pub async fn get_task_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
     if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
-        match todo_task_service::db_get_task_by_id(authen_header, &pool, task_id.clone()) {
+        match todo_task_service::db_get_task_by_id(authen_header, pool, task_id.clone()) {
             Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
                 constants::MESSAGE_OK,
                 response_body

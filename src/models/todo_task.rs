@@ -57,12 +57,12 @@ impl TodoTask {
 
         let task = InputTodoTask {
             user_id: uid,
-            todolist_id: new_task.todolist_id,
+            todolist_id: new_task.todolist_id.clone(),
             name: new_task.name.clone(),
             description: new_task.description.clone(),
-            parent_task_id: new_task.parent_task_id,
+            parent_task_id: new_task.parent_task_id.clone(),
             done: false,
-            due_date: new_task.due_date,
+            due_date: new_task.due_date.clone(),
             created_at: chrono::Local::now().naive_local(),
             modified_at: chrono::Local::now().naive_local(),
         };

@@ -1,39 +1,62 @@
-use crate::{models::dto::todo_list, models::todo_list::*, utils::database_connection::Pool};
+use crate::constants;
+use crate::error::ServiceError;
+use crate::models::response::ResponseBody;
+use crate::service::todo_list_service;
+use crate::{models::todo_list::*, models::dto::todo_list::*, utils::database_connection::Pool};
 use actix_web::web::{self};
-use actix_web::{delete, get, patch, post, Error, HttpResponse, Responder};
+use actix_web::{delete, get, patch, post, HttpRequest, HttpResponse};
 
 #[utoipa::path(
     context_path = "/lists",
     responses(
-        (status = 200, description = "Create list OK", body = String),
-        (status = 500, description = "Create list FAILED", body = String)
-    ),
+        (status = 200, description = "Create list by id OK", body = String),
+        (status = 500, description = "Create list by id FAILED", body = String)
+    )
 )]
 #[post("/create")]
 pub async fn create_list(
-    db: web::Data<Pool>,
+    req: HttpRequest,
     item: web::Json<TodoListDTO>,
-) -> Result<HttpResponse, Error> {
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::create_list(authen_header, pool, item.0) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
+    }
 }
 
-#[utoipa::path(
-    context_path = "/lists",
-    responses(
-        (status = 200, description = "Get lists OK", body = String),
-        (status = 500, description = "Get lists FAILED", body = String)
-    )
-)]
 #[get("/")]
-pub async fn get_lists(db: web::Data<Pool>) -> HttpResponse {
-    match web::block(move || get_all_lists(db)).await {
-        Ok(list) => match serde_json::to_value(list.unwrap()) {
-            Ok(response_body) => throw_response_ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to get lists: {}", e);
-                throw_response_error()
-            }
-        },
-        Err(_) => throw_response_error(),
+pub async fn get_lists(
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::get_all_lists(authen_header, pool) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -45,16 +68,22 @@ pub async fn get_lists(db: web::Data<Pool>) -> HttpResponse {
     )
 )]
 #[get("/{id}")]
-pub async fn get_list_by_id(db: web::Data<Pool>, list_id: web::Path<i32>) -> HttpResponse {
-    match web::block(move || db_get_list_by_id(db, *list_id)).await {
-        Ok(list) => match serde_json::to_value(list.unwrap()) {
-            Ok(response_body) => throw_response_ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to serialize list: {}", e);
-                throw_response_error()
-            }
-        },
-        Err(_) => throw_response_error(),
+pub async fn get_list_by_id(req: HttpRequest, task_id: web::Path<i32>, pool: web::Data<Pool>) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::db_get_list_by_id(authen_header, pool, task_id.clone()) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
@@ -63,94 +92,152 @@ pub async fn get_list_by_id(db: web::Data<Pool>, list_id: web::Path<i32>) -> Htt
     responses(
         (status = 200, description = "Delete list by id OK", body = String),
         (status = 500, description = "Delete list by id FAILED", body = String)
-    ),
-
+    )
 )]
 #[delete("/{id}")]
 pub async fn delete_list(
-    db: web::Data<Pool>,
+    req: HttpRequest,
+    pool: web::Data<Pool>,
     list_id: web::Path<i32>,
-) -> Result<HttpResponse, Error> {
-    match web::block(move || delete_single_list(db, list_id.into_inner())).await {
-        Ok(list) => match serde_json::to_value(list.unwrap()) {
-            Ok(response_body) => Ok(throw_response_ok(response_body)),
-            Err(e) => {
-                eprintln!("Failed to delete list: {}", e);
-                Ok(throw_response_error())
-            }
-        },
-        Err(_) => Ok(throw_response_error()),
+) -> Result<HttpResponse, ServiceError>{
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::delete_single_list(authen_header, pool, list_id.clone()) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }
 
 #[utoipa::path(
     context_path = "/lists",
     responses(
-        (status = 200, description = "Update lists name by id OK", body = String),
-        (status = 500, description = "Update lists name by id FAILED", body = String)
-    )
-)]
-#[patch("/update/name/{id}")]
-pub async fn patch_list_name(
-    db: web::Data<Pool>,
-    list: web::Json<todo_list::UpdateTodoListName>,
-) -> impl Responder {
-    match web::block(move || update_single_list_name(db, list)).await {
-        Ok(updated_list) => match serde_json::to_value(updated_list.unwrap()) {
-            Ok(response_body) => throw_response_ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to patch list name: {}", e);
-                throw_response_error()
-            }
-        },
-        Err(_) => throw_response_error(),
-    }
-}
-
-#[utoipa::path(
-    context_path = "/lists",
-    responses(
-        (status = 200, description = "Update lists description by id OK", body = String),
-        (status = 500, description = "Update lists description by id FAILED", body = String)
-    )
-)]
-#[patch("/update/description/{id}")]
-pub async fn patch_list_description(
-    db: web::Data<Pool>,
-    list: web::Json<todo_list::UpdateTodoListDescription>,
-) -> impl Responder {
-    match web::block(move || update_single_list_description(db, list)).await {
-        Ok(updated_list) => match serde_json::to_value(updated_list.unwrap()) {
-            Ok(response_body) => throw_response_ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to patch list description: {}", e);
-                throw_response_error()
-            }
-        },
-        Err(_) => throw_response_error(),
-    }
-}
-
-#[utoipa::path(
-    context_path = "/lists",
-    responses(
-        (status = 200, description = "Update lists shared with by id OK", body = String),
-        (status = 500, description = "Update lists shared with by id FAILED", body = String)
+        (status = 200, description = "Patch list shared with by id OK", body = String),
+        (status = 500, description = "Patch list shared with by id FAILED", body = String)
     )
 )]
 #[patch("/update/sharedwith/{id}")]
 pub async fn patch_list_shared_with(
-    db: web::Data<Pool>,
-    list: web::Json<todo_list::UpdateTodoListSharedWith>,
-) -> impl Responder {
-    match web::block(move || update_single_list_shared_with(db, list)).await {
-        Ok(updated_list) => match serde_json::to_value(updated_list.unwrap()) {
-            Ok(response_body) => throw_response_ok(response_body),
-            Err(e) => {
-                eprintln!("Failed to patch list sharedwith: {}", e);
-                throw_response_error()
-            }
-        },
-        Err(_) => throw_response_error(),
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoListSharedWithDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::update_single_list_shared_with(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
+    }
+}
+
+#[utoipa::path(
+    context_path = "/lists",
+    responses(
+        (status = 200, description = "Patch list's parent list by id OK", body = String),
+        (status = 500, description = "Patch list's parent list by id FAILED", body = String)
+    )
+)]
+#[patch("/update/parentlist/{id}")]
+pub async fn patch_list_parent_list_id(
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoListParentListIdDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::update_single_list_parent_list_id(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
+    }
+}
+
+#[utoipa::path(
+    context_path = "/lists",
+    responses(
+        (status = 200, description = "Patch list name by id OK", body = String),
+        (status = 500, description = "Patch list name by id FAILED", body = String)
+    )
+)]
+#[patch("/update/name/{id}")]
+pub async fn patch_list_name(
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoListNameDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::update_single_list_name(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
+    }
+}
+
+#[utoipa::path(
+    context_path = "/lists",
+    responses(
+        (status = 200, description = "Patch list description by id OK", body = String),
+        (status = 500, description = "Patch list description by id FAILED", body = String)
+    )
+)]
+#[patch("/update/description/{id}")]
+pub async fn patch_list_description(
+    req: HttpRequest,
+    pool: web::Data<Pool>,
+    input: web::Json<UpdateTodoListDescriptionDTO>,
+) -> Result<HttpResponse, ServiceError> {
+    if let Some(authen_header) = req.headers().get(constants::AUTHORIZATION) {
+        match todo_list_service::update_single_list_description(authen_header, pool, input) {
+            Ok(response_body) => Ok(HttpResponse::Ok().json(ResponseBody::new(
+                constants::MESSAGE_OK,
+                response_body
+            ))),
+            Err(e) => Ok(HttpResponse::InternalServerError().json(ResponseBody::new(
+                constants::MESSAGE_INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ))),
+        }
+    } else {
+        Err(ServiceError::BadRequest {
+            error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
+        })
     }
 }

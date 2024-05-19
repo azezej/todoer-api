@@ -2,7 +2,7 @@ extern crate diesel;
 
 use actix_cors::Cors;
 use actix_web::{http::header, web::Data, App, HttpServer};
-use scopes::{todo_task_scope, user_scope};
+use scopes::{todo_task_scope, todo_list_scope, user_scope};
 
 mod constants;
 mod error;
@@ -36,7 +36,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(pool.clone()))
             .service(user_scope())
             .service(todo_task_scope())
-        //    .service(todo_list_scope())
+            .service(todo_list_scope())
         //            .service(swagger())
     })
     .bind("127.0.0.1:8080")?

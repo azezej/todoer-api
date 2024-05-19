@@ -1,0 +1,3 @@
+# TODO
+
+- implement verify_auth to every function which checks user token

@@ -1,10 +1,11 @@
 -- Your SQL goes here
 CREATE TABLE todolists (
     id SERIAL NOT NULL PRIMARY KEY,
-    user_id SERIAL NOT NULL,
+    user_id INT NOT NULL,
     shared_with TEXT,
+    parent_list_id INT,
     name VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
+    description TEXT,
     created_at TIMESTAMP NOT NULL,
     modified_at TIMESTAMP NOT NULL
 )
