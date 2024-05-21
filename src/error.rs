@@ -6,18 +6,22 @@ use actix_web::{
 };
 use derive_more::{Display, Error};
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Display, Error, utoipa::ToResponse, utoipa::ToSchema)]
 pub enum ServiceError {
     #[display(fmt = "{error_message}")]
+    #[response(content_type = "application/json", example = json!({"message": "Invalid token, please login again", "data": ""}))]
     Unauthorized { error_message: String },
 
     #[display(fmt = "{error_message}")]
+    #[response(content_type = "text/plain", example = "")]
     InternalServerError { error_message: String },
 
     #[display(fmt = "{error_message}")]
+    #[response(content_type = "text/plain", example = "Json deserialize error: invalid type: integer `123`, expected a string at line 3 column 18")]
     BadRequest { error_message: String },
 
     #[display(fmt = "{error_message}")]
+    #[response(content_type = "text/plain", example = "Not found.")]
     NotFound { error_message: String },
 }
 

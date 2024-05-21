@@ -1,4 +1,4 @@
-use crate::models::dto::todo_task::*;
+use crate::models::db::todo_task::*;
 use crate::schema::todotasks::{self, dsl::*};
 use crate::utils::database_connection::Pool;
 use actix_web::web;
@@ -7,7 +7,7 @@ use diesel::result::Error;
 use diesel::{prelude::*, Queryable};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Queryable)]
+#[derive(Debug, Serialize, Deserialize, Queryable, utoipa::ToSchema, utoipa::ToResponse)]
 pub struct TodoTask {
     pub id: i32,
     pub user_id: i32,
@@ -21,7 +21,7 @@ pub struct TodoTask {
     pub modified_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Insertable, Debug)]
+#[derive(Serialize, Deserialize, Insertable, Debug, utoipa::IntoParams, utoipa::ToSchema, utoipa::ToResponse)]
 #[diesel(table_name = todotasks)]
 pub struct TodoTaskDTO {
     pub todolist_id: i32,
@@ -116,7 +116,7 @@ impl TodoTask {
     }
 
     pub fn update_single_task_summary(
-        item: UpdateTodoTaskSummaryDTO,
+        item: UpdateTodoTaskSummaryDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
@@ -131,11 +131,12 @@ impl TodoTask {
             .set(modified_at.eq(chrono::Local::now().naive_local()))
             .filter(user_id.eq(uid))
             .filter(id.eq(item.task_id));
+        ("change ok");
         Ok(task)
     }
 
     pub fn update_single_task_description(
-        item: UpdateTodoTaskDescriptionDTO,
+        item: UpdateTodoTaskDescriptionDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
@@ -153,7 +154,7 @@ impl TodoTask {
     }
 
     pub fn update_single_task_parent_task_id(
-        item: UpdateTodoTaskParentTaskDTO,
+        item: UpdateTodoTaskParentTaskDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
@@ -172,7 +173,7 @@ impl TodoTask {
     }
 
     pub fn update_single_task_due_date(
-        item: UpdateTodoTaskDueDateDTO,
+        item: UpdateTodoTaskDueDateDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
@@ -191,7 +192,7 @@ impl TodoTask {
     }
 
     pub fn update_single_task_todolist_id(
-        item: UpdateTodoTaskTodoListDTO,
+        item: UpdateTodoTaskTodoListDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {
@@ -208,7 +209,7 @@ impl TodoTask {
     }
 
     pub fn update_single_task_done (
-        item: UpdateTodoTaskDoneDTO,
+        item: UpdateTodoTaskDoneDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoTask, diesel::result::Error> {

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::{todo_list::TodoList, todo_task::TodoTask};
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseBody<T> {
     pub message: String,
@@ -8,6 +10,7 @@ pub struct ResponseBody<T> {
 
 impl<T> ResponseBody<T> {
     pub fn new(message: &str, data: T) -> ResponseBody<T> {
+        ("responsebody created");
         ResponseBody {
             message: message.to_string(),
             data,
@@ -41,4 +44,56 @@ impl<T> Page<T> {
             total_elements,
         }
     }
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct TodoTaskResponse {
+    pub message: String,
+    pub data: TodoTask,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct AllTodoTasksResponse {
+    pub message: String,
+    pub data: Vec<TodoTask>,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct TodoTaskDeletedResponse {
+    pub message: String,
+    pub data: i32, 
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct TodoListResponse {
+    pub message: String,
+    pub data: TodoList,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct AllTodoListsResponse {
+    pub message: String,
+    pub data: Vec<TodoList>,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct TodoListDeletedResponse {
+    pub message: String,
+    pub data: i32, 
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct TokenMissingResponse {
+    pub data: String,
+    pub message: String,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct InternalServerErrorResponse {
+    pub message: String,
+}
+
+#[derive(utoipa::ToResponse, utoipa::ToSchema)]
+pub struct BadRequestResponse {
+    pub message: String,
 }

@@ -1,26 +1,27 @@
 use crate::constants;
 use crate::middleware::verify_auth;
 use crate::error::ServiceError;
+use crate::models::db::todo_task::*;
 use crate::{models::dto::todo_task::*, models::todo_task::*, utils::database_connection::Pool};
 use actix_web::http::header::HeaderValue;
 use actix_web::web::{self};
 
 pub fn get_all_tasks(authen_header: &HeaderValue, pool: web::Data<Pool>) -> Result<Vec<TodoTask>, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::get_all_tasks(uid, pool) {
-                            Ok(tasks) => {
-                                return Ok(tasks);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_TASKS_NOT_FOUND_FOR_USER.to_string() });
-                            }
-                        }
-                    } else {
-                        return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::get_all_tasks(uid, pool) {
+                Ok(tasks) => {
+                    return Ok(tasks);
+                },
+                Err(_) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_TASKS_NOT_FOUND_FOR_USER.to_string() });
                 }
+            }
+        } else {
+            return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+        }
+    }
     Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
 }
 
@@ -29,22 +30,22 @@ pub fn db_get_task_by_id(
     pool: web::Data<Pool>,
     task_id: i32,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::db_get_task_by_id(task_id, uid, pool.clone()) {
-                            Ok(task) => {
-                                return Ok(task);
-                            }, 
-                            Err(e) => {
-                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_GET_TASK_BY_ID.to_string() + " " + &e.to_string() });
-                            }
-                        }
-                    } else {
-                        return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::db_get_task_by_id(task_id, uid, pool.clone()) {
+                Ok(task) => {
+                    return Ok(task);
+                }, 
+                Err(e) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_GET_TASK_BY_ID.to_string() + " " + &e.to_string() });
                 }
-                Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+            }
+        } else {
+            return Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
+        }
+    }
+    Err(ServiceError::BadRequest { error_message: constants::MESSAGE_TOKEN_MISSING.to_string() })
 }
 
 pub fn create_task(
@@ -52,10 +53,9 @@ pub fn create_task(
     pool: web::Data<Pool>,
     item: TodoTaskDTO,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            println!("uid: {}", uid);
             match TodoTask::new(item, uid, pool) {
                 Ok(task) => {
                     return Ok(task);
@@ -80,42 +80,43 @@ pub fn delete_single_task(
     pool: web::Data<Pool>,
     task_id: i32,
 ) -> Result<usize, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::delete_single_task(task_id, uid, pool) {
-                            Ok(deletion) => {
-                                return Ok(deletion);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_DELETE_TASK.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::delete_single_task(task_id, uid, pool) {
+                Ok(deletion) => {
+                    return Ok(deletion);
+                },
+                Err(_) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_DELETE_TASK.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
 }
 
-pub fn update_single_task_name(
+pub fn update_single_task_summary(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskSummaryDTO>,
+    item: UpdateTodoTaskSummaryDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_summary(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_NAME.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_summary(item, uid, pool) {
+                Ok(update) => {
+                    ("update single task ok");
+                    return Ok(update);
+                },
+                Err(e) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_NAME.to_string() + " " + &e.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
@@ -124,21 +125,21 @@ pub fn update_single_task_name(
 pub fn update_single_task_description(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskDescriptionDTO>,
+    item: UpdateTodoTaskDescriptionDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_description(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DESCRIPTION.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_description(item, uid, pool) {
+                Ok(update) => {
+                    return Ok(update);
+                },
+                Err(e) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DESCRIPTION.to_string() + " " + &e.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
@@ -147,21 +148,21 @@ pub fn update_single_task_description(
 pub fn update_single_task_due_date(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskDueDateDTO>,
+    item: UpdateTodoTaskDueDateDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_due_date(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DUE_DATE.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_due_date(item, uid, pool) {
+                Ok(update) => {
+                    return Ok(update);
+                },
+                Err(e) => {
+                    return Err(ServiceError::NotFound { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DUE_DATE.to_string() + " " + &e.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
@@ -175,22 +176,22 @@ to move tasks between workspaces or between users
 pub fn update_single_task_todolist_id(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskTodoListDTO>,
+    item: UpdateTodoTaskTodoListDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_todolist_id(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_TODO_LIST.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_todolist_id(item, uid, pool) {
+                Ok(update) => {
+                    return Ok(update);
+                },
+                Err(_) => {
+                    return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_TODO_LIST.to_string() });
                 }
-            Err(ServiceError::BadRequest {
+            }
+        }
+    }
+    Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
 }
@@ -198,21 +199,21 @@ pub fn update_single_task_todolist_id(
 pub fn update_single_task_done(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskDoneDTO>,
+    item: UpdateTodoTaskDoneDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_done(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DONE.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_done(item, uid, pool) {
+                Ok(update) => {
+                    return Ok(update);
+                },
+                Err(_) => {
+                    return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DONE.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })
@@ -221,21 +222,21 @@ pub fn update_single_task_done(
 pub fn update_single_task_parent_task_id(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoTaskParentTaskDTO>,
+    item: UpdateTodoTaskParentTaskDB,
 ) -> Result<TodoTask, ServiceError> {
-   if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
-                    if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
-                        let uid = user.id;
-                        match TodoTask::update_single_task_parent_task_id(item.0, uid, pool) {
-                            Ok(update) => {
-                                return Ok(update);
-                            },
-                            Err(_) => {
-                                return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_TASK_DONE.to_string() });
-                            }
-                       }
-                    }
+    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
+        if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
+            let uid = user.id;
+            match TodoTask::update_single_task_parent_task_id(item, uid, pool) {
+                Ok(update) => {
+                    return Ok(update);
+                },
+                Err(_) => {
+                    return Err(ServiceError::InternalServerError { error_message: constants::MESSAGE_CAN_NOT_UPDATE_LIST_PARENT_LIST_ID.to_string() });
                 }
+            }
+        }
+    }
     Err(ServiceError::BadRequest {
         error_message: constants::MESSAGE_TOKEN_MISSING.to_string(),
     })

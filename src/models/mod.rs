@@ -1,4 +1,5 @@
 pub mod dto;
+pub mod db;
 pub mod login_history;
 pub mod response;
 pub mod todo_list;

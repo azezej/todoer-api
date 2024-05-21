@@ -2,6 +2,7 @@ use crate::constants;
 use crate::error::ServiceError;
 use crate::middleware::verify_auth;
 use crate::models::dto::todo_list::TodoListDTO;
+use crate::models::db::todo_list::*;
 use crate::{
     models::todo_list::TodoList, utils::database_connection::Pool,
     models::dto::todo_list::*,
@@ -104,12 +105,12 @@ pub fn delete_single_list(
 pub fn update_single_list_shared_with(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoListSharedWithDTO>,
+    item: UpdateTodoListSharedWithDB,
 ) -> Result<TodoList, ServiceError> {
    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            match TodoList::update_single_list_shared_with(item.0, uid, pool) {
+            match TodoList::update_single_list_shared_with(item, uid, pool) {
                 Ok(update) => {
                     return Ok(update);
                 },
@@ -127,12 +128,12 @@ pub fn update_single_list_shared_with(
 pub fn update_single_list_parent_list_id(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoListParentListIdDTO>,
+    item: UpdateTodoListParentListIdDB,
 ) -> Result<TodoList, ServiceError> {
    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            match TodoList::update_single_list_parent_list_id(item.0, uid, pool) {
+            match TodoList::update_single_list_parent_list_id(item, uid, pool) {
                 Ok(update) => {
                     return Ok(update);
                 },
@@ -150,12 +151,12 @@ pub fn update_single_list_parent_list_id(
 pub fn update_single_list_title(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoListTitleDTO>,
+    item: UpdateTodoListTitleDB,
 ) -> Result<TodoList, ServiceError> {
    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            match TodoList::update_single_list_title(item.0, uid, pool) {
+            match TodoList::update_single_list_title(item, uid, pool) {
                 Ok(update) => {
                     return Ok(update);
                 },
@@ -173,12 +174,12 @@ pub fn update_single_list_title(
 pub fn update_single_list_description(
     authen_header: &HeaderValue,
     pool: web::Data<Pool>,
-    item: web::Json<UpdateTodoListDescriptionDTO>,
+    item: UpdateTodoListDescriptionDB,
 ) -> Result<TodoList, ServiceError> {
    if let Ok(_) = verify_auth::check_token(authen_header, pool.clone()) {
         if let Ok(user) = verify_auth::verify_user(&authen_header, pool.clone()) {
             let uid = user.id;
-            match TodoList::update_single_list_description(item.0, uid, pool) {
+            match TodoList::update_single_list_description(item, uid, pool) {
                 Ok(update) => {
                     return Ok(update);
                 },

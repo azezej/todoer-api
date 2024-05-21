@@ -1,11 +1,12 @@
 use crate::schema::todolists::{self, dsl::*};
 use crate::utils::database_connection::Pool;
+use crate::models::db::todo_list::*;
 use crate::models::dto::todo_list::*;
 use actix_web::web;
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, update, Queryable};
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Serialize, Deserialize, Queryable)]
+#[derive(Debug, Serialize, Deserialize, Queryable, utoipa::ToSchema, utoipa::ToResponse)]
 pub struct TodoList {
     pub id: i32,
     pub user_id: i32,
@@ -91,7 +92,7 @@ impl TodoList {
     }
 
     pub fn update_single_list_title(
-        item: UpdateTodoListTitleDTO,
+        item: UpdateTodoListTitleDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoList, diesel::result::Error> {
@@ -110,7 +111,7 @@ impl TodoList {
     }
 
     pub fn update_single_list_description(
-        item: UpdateTodoListDescriptionDTO,
+        item: UpdateTodoListDescriptionDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoList, diesel::result::Error> {
@@ -129,7 +130,7 @@ impl TodoList {
     }
 
     pub fn update_single_list_shared_with(
-        item: UpdateTodoListSharedWithDTO,
+        item: UpdateTodoListSharedWithDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoList, diesel::result::Error> {
@@ -147,7 +148,7 @@ impl TodoList {
     }
 
     pub fn update_single_list_parent_list_id(
-        item: UpdateTodoListParentListIdDTO,
+        item: UpdateTodoListParentListIdDB,
         uid: i32,
         pool: web::Data<Pool>,
     ) -> Result<TodoList, diesel::result::Error> {
